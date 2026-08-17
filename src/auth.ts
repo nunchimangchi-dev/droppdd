@@ -1,15 +1,16 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // @auth/prisma-adapter types its argument against the standard @prisma/client
 // package. This project uses Prisma 7's custom client output
-// (generated/prisma), which is a structurally different (but runtime-
-// compatible) PrismaClient type - the cast below is a type-only workaround.
+// (generated/prisma) instead, so @prisma/client has no real PrismaClient
+// export to import here (it's runtime-compatible, just structurally
+// different) - cast through the adapter's own parameter type rather than
+// depending on @prisma/client's type export at all.
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma as unknown as PrismaClient),
+  adapter: PrismaAdapter(prisma as unknown as Parameters<typeof PrismaAdapter>[0]),
   providers: [Google],
   pages: {
     signIn: "/signin",
