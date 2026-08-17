@@ -113,10 +113,37 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     set (no Google creds), hitting `/api/auth/signin/google` redirects
     cleanly to `/api/auth/error?error=Configuration` — a clear, readable
     error state, not a silent half-broken app.
-  - **Not verified**: a real end-to-end Google sign-in. That needs a human
-    with a browser — I don't have one on this host (see the Chrome
-    install note above; browser automation this session ran against a
-    connected Mac, not this machine).
+  - **Update — real end-to-end Google sign-in now verified.** Tested via
+    browser automation against a connected Mac's Chrome, hitting the actual
+    `tailscale serve` production URL (`https://box.tail2b3f17.ts.net/`,
+    temporarily pointed at droppdd instead of the dashboard for the test,
+    restored afterward). Full flow confirmed: sign-in creates real
+    `User`/`Account`/`Session` rows, the allowlist correctly gates
+    non-allowed emails, the dashboard renders authenticated, and sign-out
+    correctly deletes the session and re-gates the app.
+  - **Real bug found and fixed during that test**: `AUTH_TRUST_HOST=true`
+    alone was **not sufficient** behind `tailscale serve`. The first leg
+    (building the Google authorize URL) correctly picked up the real host,
+    but the server-side token-exchange step reconstructed the redirect URI
+    as `localhost:3000`, and Google rejected the exchange with
+    `redirect_uri_mismatch`. Auth.js's documented fix for self-hosted
+    deployments behind a proxy is to set `AUTH_URL` explicitly — confirmed
+    this resolves it.
+  - **Important**: `AUTH_URL` must **not** live in the shared dev `.env`.
+    If hardcoded there, it forces every environment (including plain
+    `npm run dev` on `http://localhost:3000`) to use the production
+    redirect URI, breaking local sign-in testing entirely (mismatch
+    against the *other* registered URI). It needs to be set only in
+    whatever environment actually serves the app in production — e.g. a
+    `systemd --user` service's `Environment=` directive once droppdd gets
+    one (same pattern as the skyrise dashboard), not in this repo's `.env`.
+    Left unset here on purpose; whoever sets up the real deployment needs
+    to add `AUTH_URL="https://box.tail2b3f17.ts.net"` (or whatever the
+    final host is) at that layer.
+  - Also fixed during this test: `signIn("google")` had no explicit
+    `redirectTo`, so a successful sign-in landed back on `/signin` instead
+    of the dashboard (confusing, not a security issue — the session was
+    valid the whole time). Now calls `signIn("google", { redirectTo: "/" })`.
 - **Before deploying**: the OAuth client's authorized redirect URIs
   already include both `http://localhost:3000/api/auth/callback/google`
   and `https://box.tail2b3f17.ts.net/api/auth/callback/google` (see the
