@@ -44,3 +44,32 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
 - **Note for Reviewer**:
   - Added `npx prisma migrate dev` and `npx prisma db seed` to the development workflow.
   - The database file `prisma/dev.db` is ignored in `.gitignore`.
+
+# Handoff: Auth Phase — Not Started
+
+- **Status**: Prompt drafted (`docs/GEMINI-AUTH-PROMPT.md`), not yet run.
+  No auth code exists on `main` yet.
+- **Blocked on**: A human needs to pull the Google OAuth client
+  (Client ID/secret) out of Bitwarden — stored there as a secure note —
+  and populate `.env` with `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` /
+  `AUTH_SECRET` before the prompt can be run. Not something gemini can do
+  itself.
+- **Scope, per the prompt**: Auth.js (NextAuth) with the Google provider
+  only, Prisma adapter (adds `User`/`Account`/`Session`/`VerificationToken`
+  tables + a migration), plus a new `AllowedEmail` model gating sign-in to
+  specific addresses. Middleware protects all existing routes. No AI
+  integration, no deployment changes.
+- **Since the data-layer merge, two things the auth phase should know
+  about**:
+  - `package.json` now has a `postinstall: prisma generate` script — the
+    generated Prisma client is gitignored and regenerates automatically on
+    install. Any new models added for auth just need a migration, not a
+    manual generate step.
+  - CI (`.github/workflows/ci.yml`) now runs `prisma migrate deploy` and
+    `prisma db seed` (with `DATABASE_URL` supplied inline) before
+    `npm run build`, because the pages are static and query Prisma at
+    build time. This was needed to get PR #1 green — the auth phase will
+    need its new migration(s) to apply cleanly under that same flow.
+- **Branch plan**: prompt assumes starting from `main` on a fresh
+  `feat/auth` branch (PR #1 is merged, so this is unblocked branch-wise —
+  only the Bitwarden/`.env` step remains).
