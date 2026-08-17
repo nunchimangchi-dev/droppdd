@@ -1,12 +1,15 @@
 import Link from "next/link";
-import { mockWorkouts } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 import WorkoutTracker from "./WorkoutTracker";
 
 export default async function WorkoutDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  const workout = mockWorkouts.find((w) => w.id === id);
+  const workout = await prisma.workout.findUnique({
+    where: { id },
+    include: { exercises: true },
+  });
 
   if (!workout) {
     return (
@@ -61,7 +64,16 @@ export default async function WorkoutDetailPage(props: {
         </div>
       </div>
 
-      <WorkoutTracker workout={workout} />
+      <WorkoutTracker workout={{ 
+        ...workout, 
+        intensity: workout.intensity as "HIGH" | "EXtreme" | "ANARCHIC" | "MEDIUM",
+        category: workout.category as "METCON" | "STRENGTH" | "AMRAP" | "ENDURANCE",
+        target: workout.target,
+        exercises: workout.exercises.map(ex => ({
+            ...ex,
+            notes: ex.notes ?? undefined
+        }))
+      }} />
     </div>
   );
 }

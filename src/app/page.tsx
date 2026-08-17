@@ -1,9 +1,17 @@
 import Link from "next/link";
-import { mockWorkouts, mockOMAD, mockProgress, mockMeals } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
+import { mockOMAD } from "@/lib/mock-data";
 
-export default function Dashboard() {
-  const wod = mockWorkouts[0]; // HELLFIRE METCON
-  const nextMeal = mockMeals[0]; // RIBEYE
+export default async function Dashboard() {
+  const wod = await prisma.workout.findFirst({
+    include: { exercises: true },
+  });
+  const nextMeal = await prisma.meal.findFirst();
+  const progress = await prisma.progress.findFirst();
+
+  if (!wod || !nextMeal || !progress) {
+    return <div>Data not found</div>;
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -63,7 +71,7 @@ export default function Dashboard() {
             </span>
             <div className="flex items-baseline gap-2 mt-3">
               <h2 className="text-5xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
-                {mockProgress.currentStreak}
+                {progress.currentStreak}
               </h2>
               <span className="text-xl font-black text-orange-500">DAYS</span>
             </div>
@@ -74,7 +82,7 @@ export default function Dashboard() {
 
           <div className="border-t border-zinc-100 dark:border-zinc-900 pt-4 mt-6 flex justify-between items-center text-xs">
             <span className="font-extrabold text-zinc-400 uppercase">ALL-TIME RECORD:</span>
-            <span className="font-black text-zinc-800 dark:text-zinc-200">{mockProgress.bestStreak} DAYS</span>
+            <span className="font-black text-zinc-800 dark:text-zinc-200">{progress.bestStreak} DAYS</span>
           </div>
         </div>
 
@@ -86,18 +94,18 @@ export default function Dashboard() {
             </span>
             <div className="flex items-baseline gap-1 mt-3">
               <h2 className="text-5xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
-                {mockProgress.currentWeight}
+                {progress.currentWeight}
               </h2>
               <span className="text-sm font-black text-zinc-400">LBS</span>
             </div>
             <p className="text-xs text-green-500 font-extrabold uppercase mt-1">
-              ↓ {(mockProgress.startWeight - mockProgress.currentWeight).toFixed(1)} LBS SHED TOTAL
+              ↓ {(progress.startWeight - progress.currentWeight).toFixed(1)} LBS SHED TOTAL
             </p>
           </div>
 
           <div className="border-t border-zinc-100 dark:border-zinc-900 pt-4 mt-6 flex justify-between items-center text-xs">
             <span className="font-extrabold text-zinc-400 uppercase">TARGET MASS:</span>
-            <span className="font-black text-zinc-800 dark:text-zinc-200">{mockProgress.targetWeight} LBS</span>
+            <span className="font-black text-zinc-800 dark:text-zinc-200">{progress.targetWeight} LBS</span>
           </div>
         </div>
       </div>

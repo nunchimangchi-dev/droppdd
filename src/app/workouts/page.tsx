@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { mockWorkouts } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 
-export default function WorkoutsPage() {
+export default async function WorkoutsPage() {
+  const workouts = await prisma.workout.findMany({
+    include: { exercises: true },
+  });
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Aggressive Section Header */}
@@ -16,7 +20,7 @@ export default function WorkoutsPage() {
 
       {/* Grid of Workouts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {mockWorkouts.map((workout) => (
+        {workouts.map((workout) => (
           <div
             key={workout.id}
             className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 hover:border-orange-500/50 dark:hover:border-orange-500/50 p-6 flex flex-col justify-between transition-all duration-150 group"

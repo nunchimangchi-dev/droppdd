@@ -1,6 +1,8 @@
-import { mockMeals } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 
-export default function MealsPage() {
+export default async function MealsPage() {
+  const meals = await prisma.meal.findMany();
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Section Header */}
@@ -22,7 +24,7 @@ export default function MealsPage() {
           </h2>
 
           <div className="space-y-6">
-            {mockMeals.map((meal) => (
+            {meals.map((meal) => (
               <div
                 key={meal.id}
                 className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-6 rounded-sm space-y-6"
@@ -70,7 +72,7 @@ export default function MealsPage() {
                       🛒 ESSENTIAL ELEMENTS:
                     </h4>
                     <ul className="space-y-1.5">
-                      {meal.ingredients.map((ing) => (
+                      {(meal.ingredients as string[]).map((ing) => (
                         <li key={ing} className="text-xs flex items-start gap-2 text-zinc-700 dark:text-zinc-300">
                           <span className="text-orange-500 font-black">•</span>
                           <span>{ing}</span>
@@ -85,7 +87,7 @@ export default function MealsPage() {
                       🔪 PREPARATION PROTOCOL:
                     </h4>
                     <ol className="space-y-3">
-                      {meal.instructions.map((inst, idx) => (
+                      {(meal.instructions as string[]).map((inst, idx) => (
                         <li key={idx} className="text-xs flex gap-3 text-zinc-700 dark:text-zinc-300">
                           <span className="font-black text-orange-500 flex-shrink-0 bg-orange-500/10 border border-orange-500/20 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">
                             {idx + 1}

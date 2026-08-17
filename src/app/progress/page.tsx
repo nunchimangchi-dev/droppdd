@@ -1,6 +1,15 @@
-import { mockProgress } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 
-export default function ProgressPage() {
+export default async function ProgressPage() {
+  const progress = await prisma.progress.findFirst();
+  const weightHistory = await prisma.weightRecord.findMany({
+    orderBy: { id: 'asc' },
+  });
+
+  if (!progress) {
+    return <div className="text-center py-16">No progress data found.</div>;
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -16,10 +25,10 @@ export default function ProgressPage() {
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "CURRENT", value: `${mockProgress.currentWeight} LBS` },
-          { label: "START", value: `${mockProgress.startWeight} LBS` },
-          { label: "TARGET", value: `${mockProgress.targetWeight} LBS` },
-          { label: "STREAK", value: `${mockProgress.currentStreak} DAYS` },
+          { label: "CURRENT", value: `${progress.currentWeight} LBS` },
+          { label: "START", value: `${progress.startWeight} LBS` },
+          { label: "TARGET", value: `${progress.targetWeight} LBS` },
+          { label: "STREAK", value: `${progress.currentStreak} DAYS` },
         ].map((stat) => (
           <div key={stat.label} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-4 rounded-sm">
             <p className="text-[10px] text-zinc-500 font-black tracking-widest uppercase">{stat.label}</p>
@@ -33,8 +42,8 @@ export default function ProgressPage() {
         <h2 className="text-lg font-black tracking-wider text-zinc-400 uppercase mb-6">WEIGHT LOSS TREND</h2>
         
         <div className="space-y-4">
-          {mockProgress.weightHistory.map((record) => {
-            const percentage = ( (mockProgress.startWeight - record.weight) / (mockProgress.startWeight - mockProgress.targetWeight) ) * 100;
+          {weightHistory.map((record) => {
+            const percentage = ( (progress.startWeight - record.weight) / (progress.startWeight - progress.targetWeight) ) * 100;
             
             return (
               <div key={record.date} className="flex items-center gap-4">

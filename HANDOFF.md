@@ -27,3 +27,20 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
 
 ## Branch
 - Work performed on branch: `feat/app-shell`.
+
+# Handoff: Data Migration to SQLite (Prisma)
+
+- **What Changed**:
+  - Installed Prisma and set up SQLite database.
+  - Defined Prisma schema matching `mock-data.ts`.
+  - Created a seed script `prisma/seed.ts` to populate the DB with mock data.
+  - Updated all page components (`/`, `/workouts`, `/workouts/[id]`, `/meals`, `/progress`) to fetch data from Prisma directly using Server Components.
+- **Modeling Decisions**:
+  - Used `Json` type for `ingredients` and `instructions` in `Meal` model to maintain flexibility in SQLite.
+  - Created separate models for `Workout`, `Exercise`, `Meal`, `Progress`, and `WeightRecord` to align with the data structure.
+- **Verification**:
+  - Ran `npm run lint` and `npm run build` - both passed.
+  - Manually verified all pages display the same data as before.
+- **Note for Reviewer**:
+  - Added `npx prisma migrate dev` and `npx prisma db seed` to the development workflow.
+  - The database file `prisma/dev.db` is ignored in `.gitignore`.
