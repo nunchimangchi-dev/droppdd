@@ -75,6 +75,22 @@ async function main() {
       },
     });
   }
+
+  // Seed the sign-in allowlist from ALLOWED_EMAILS (comma-separated), if set.
+  // Existing entries are left alone - re-seeding shouldn't wipe emails added
+  // later via Prisma Studio.
+  const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+
+  for (const email of allowedEmails) {
+    await prisma.allowedEmail.upsert({
+      where: { email },
+      update: {},
+      create: { email },
+    });
+  }
 }
 
 main()
