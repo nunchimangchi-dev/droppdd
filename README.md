@@ -15,6 +15,8 @@ TypeScript, Tailwind CSS, Next.js App Router, ESLint, npm.
 
 ```sh
 npm install
+npx prisma migrate dev
+npx prisma db seed
 npm run dev
 ```
 

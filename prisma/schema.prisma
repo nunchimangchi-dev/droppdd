@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Workout {
+  id           String     @id
+  title        String
+  description  String
+  duration     String
+  intensity    String
+  category     String
+  target       String
+  caloriesBurn Int
+  exercises    Exercise[]
+}
+
+model Exercise {
+  id        Int      @id @default(autoincrement())
+  name      String
+  sets      Int
+  reps      String
+  rest      String
+  notes     String?
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id])
+}
+
+model Meal {
+  id           String   @id
+  title        String
+  description  String
+  calories     Int
+  protein      Int
+  fat          Int
+  netCarbs     Int
+  category     String
+  ingredients  Json
+  instructions Json
+}
+
+model WeightRecord {
+  id     Int    @id @default(autoincrement())
+  date   String
+  weight Float
+}
+
+model Progress {
+  id             Int   @id @default(autoincrement())
+  currentStreak  Int
+  bestStreak     Int
+  targetWeight   Float
+  currentWeight  Float
+  startWeight    Float
+}
