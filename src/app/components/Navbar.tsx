@@ -9,7 +9,12 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-export default function Navbar() {
+interface NavbarProps {
+  userEmail: string | null;
+  signOutAction: () => Promise<void>;
+}
+
+export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
   const pathname = usePathname();
 
   // Helper to determine if path is active (exact match, or sub-path match for nested pages)
@@ -155,6 +160,20 @@ export default function Navbar() {
               <p className="text-lg font-black text-zinc-50">12 DAYS STRAIGHT</p>
             </div>
           </div>
+
+          {userEmail && (
+            <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-zinc-900">
+              <p className="text-[10px] text-zinc-500 font-bold truncate">{userEmail}</p>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="text-[10px] font-black tracking-widest uppercase text-zinc-500 hover:text-orange-500 transition-colors flex-shrink-0"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -175,6 +194,33 @@ export default function Navbar() {
             </Link>
           );
         })}
+        {userEmail && (
+          <form
+            action={signOutAction}
+            className="flex flex-col items-center justify-center flex-1 h-full"
+          >
+            <button
+              type="submit"
+              className="flex flex-col items-center justify-center w-full h-full py-2 text-zinc-500 hover:text-orange-500 transition-all duration-150"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-5 h-5 mb-0.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"
+                />
+              </svg>
+              <span className="text-[9px] font-black tracking-widest uppercase">Exit</span>
+            </button>
+          </form>
+        )}
       </nav>
     </>
   );
