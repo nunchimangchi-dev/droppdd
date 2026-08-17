@@ -45,15 +45,23 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
   - Added `npx prisma migrate dev` and `npx prisma db seed` to the development workflow.
   - The database file `prisma/dev.db` is ignored in `.gitignore`.
 
-# Handoff: Auth Phase — Not Started
+# Handoff: Auth Phase — Ready to Run
 
 - **Status**: Prompt drafted (`docs/GEMINI-AUTH-PROMPT.md`), not yet run.
-  No auth code exists on `main` yet.
-- **Blocked on**: A human needs to pull the Google OAuth client
-  (Client ID/secret) out of Bitwarden — stored there as a secure note —
-  and populate `.env` with `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` /
-  `AUTH_SECRET` before the prompt can be run. Not something gemini can do
-  itself.
+  No auth code exists on `main` yet. Prerequisites are now cleared —
+  unblocked, ready for a `gemini -p` pass.
+- **Prerequisites — done**:
+  - `.env` populated with `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (pulled
+    from the Bitwarden secure note) and a freshly generated `AUTH_SECRET`.
+  - The Google OAuth client's authorized redirect URIs now include both
+    `http://localhost:3000/api/auth/callback/google` (dev) and
+    `https://box.tail2b3f17.ts.net/api/auth/callback/google` (prod, over
+    `tailscale serve`, same pattern as the skyrise dashboard). Verified
+    saved via a fresh page reload of the Cloud Console client editor.
+    Google notes propagation can take up to a few hours.
+  - Caveat: this assumes droppdd ends up served at the *root* of
+    `box.tail2b3f17.ts.net`. If it lands on a sub-path instead, this
+    redirect URI needs updating first.
 - **Scope, per the prompt**: Auth.js (NextAuth) with the Google provider
   only, Prisma adapter (adds `User`/`Account`/`Session`/`VerificationToken`
   tables + a migration), plus a new `AllowedEmail` model gating sign-in to
