@@ -76,6 +76,33 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  wagers        Wager[]
+}
+
+// Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,
+// no real money. "metric" is deliberately limited to values resolvable from
+// data already tracked elsewhere in this schema (Progress, WeightRecord) -
+// no new logging infrastructure, and no metric type gets added here until
+// there's real tracked data to resolve it against:
+//   - WEIGHT_TARGET: resolved against WeightRecord / Progress.currentWeight
+//   - STREAK_TARGET: resolved against Progress.currentStreak
+// Aggressiveness guardrails (e.g. capping WEIGHT_TARGET to a safe rate of
+// loss for the given date range) are an application-layer concern for
+// whatever builds the creation flow, not enforced at the schema level.
+model Wager {
+  id               Int       @id @default(autoincrement())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  metric           String // "WEIGHT_TARGET" | "STREAK_TARGET"
+  startValue       Float // baseline captured at creation (e.g. starting weight, or streak at creation)
+  targetValue      Float
+  stakeDescription String // honor-system, symbolic - e.g. "$20 to Feeding America if I miss this"
+  startDate        DateTime  @default(now())
+  endDate          DateTime
+  status           String    @default("ACTIVE") // "ACTIVE" | "WON" | "LOST" | "CANCELLED"
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
 }
 
 model Account {
