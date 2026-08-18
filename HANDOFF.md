@@ -275,3 +275,52 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
   or off Tailscale, that env var (and the registered OAuth redirect URI)
   both need updating together.
 
+# Handoff: Wagers Data Model (feat/wagers-data-model)
+
+- **Status**: Data model only. No UI, no creation flow, no resolution
+  logic/cron job. This is deliberately the first, smallest step — a
+  checkpoint to review the schema before building anything on top of it.
+- **What changed**: New `Wager` model in `prisma/schema.prisma` (migration
+  `20260818180525_add_wager_model`), plus a `wagers Wager[]` back-relation
+  on `User`.
+- **Design decisions, per `docs/FUTURE-WAGERS.md`'s phase-1 scope** (solo
+  commitment contracts, honor system, no real money):
+  - `metric` is a plain `String`, deliberately limited for now to values
+    resolvable against data this schema *already* tracks — no new logging
+    infrastructure added just to support a wager type:
+    - `WEIGHT_TARGET` — resolves against `WeightRecord` / `Progress.currentWeight`
+    - `STREAK_TARGET` — resolves against `Progress.currentStreak`
+    A workout-frequency or meal-adherence metric would need a real
+    completion-logging table first (none exists yet — `WorkoutTracker`'s
+    set-completion state is client-side only); out of scope until that
+    exists.
+  - `stakeDescription` is a free-text string, not a currency amount — e.g.
+    "$20 to Feeding America if I miss this." Honor-system and symbolic by
+    design in phase 1; no payment processing anywhere near this yet.
+  - `startValue` is captured at creation time (baseline weight or streak),
+    so resolution later is a simple comparison, not a re-derivation.
+  - `userId` + relation to `User` added now even though only one
+    allowlisted user exists today — phase 2 (peer wagers) needs to know
+    who made a wager, and retrofitting a required relation onto existing
+    rows later is more painful than adding it now while the table's empty.
+  - Enum-shaped fields (`metric`, `status`) use plain `String`, matching
+    this schema's existing convention (`Workout.intensity`,
+    `Workout.category`) rather than introducing Prisma's `enum` — this
+    repo has never used Prisma enums, presumably because of SQLite's
+    historically limited enum support in Prisma; not worth being the first
+    exception here.
+  - **Not enforced at the schema level, flagged for whoever builds the
+    creation flow next**: the goal-aggressiveness guardrail from
+    `docs/FUTURE-WAGERS.md` (capping how aggressive a `WEIGHT_TARGET` can
+    be for its date range, roughly 0.5–1% body weight/week) is an
+    application-layer validation concern, not something SQLite/Prisma can
+    express as a schema constraint.
+- **Verification**: `npm run lint` and `npm run build` clean. Confirmed the
+  model resolves correctly at the client level (`prisma.wager.findMany()`
+  returns `[]`, `User` ↔ `Wager` relation query works).
+- **Next steps, not started**: creation form/server action (with the
+  aggressiveness guardrail enforced there), a resolution check (likely
+  triggered on page load rather than a cron, given this is a
+  single-instance personal deployment), and a `/wagers` page to actually
+  see them.
+
