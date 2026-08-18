@@ -36,12 +36,45 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar userEmail={session?.user?.email ?? null} signOutAction={signOutAction} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Mobile Header */}
-          <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 sticky top-0 z-40">
-            <span className="font-black tracking-widest text-xl text-orange-500 italic">
-              DROPPDD<span className="text-zinc-950 dark:text-zinc-50">.</span>
-            </span>
-            <div className="flex items-center gap-1.5 text-xs bg-orange-500/15 text-orange-500 font-black px-2 py-1 rounded border border-orange-500/20">
-              🔥 12 DAYS
+          <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-900 bg-zinc-950 sticky top-0 z-40 shadow-xl">
+            <div className="flex flex-col">
+              <span className="font-black tracking-widest text-xl text-orange-500 italic leading-none">
+                DROPPDD<span className="text-zinc-50">.</span>
+              </span>
+              <span className="text-[7px] tracking-[0.3em] font-black text-zinc-600 uppercase mt-0.5">
+                AGGRESSIVE ATHLETICISM
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-[10px] bg-orange-500/10 text-orange-500 font-black px-2.5 py-1.5 rounded-sm border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)] italic">
+                🔥 12 DAYS
+              </div>
+              
+              {session?.user && (
+                <form action={signOutAction}>
+                  <button
+                    type="submit"
+                    className="p-2 text-zinc-500 hover:text-orange-500 transition-colors border border-zinc-800 rounded-sm bg-zinc-900/50"
+                    title="Sign out"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"
+                      />
+                    </svg>
+                  </button>
+                </form>
+              )}
             </div>
           </header>
 

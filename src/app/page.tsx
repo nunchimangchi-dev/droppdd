@@ -16,12 +16,17 @@ export default async function Dashboard() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Aggressive Hero Header */}
-      <div className="border-l-4 border-orange-500 pl-4 md:pl-6 py-2">
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50">
-          DAILY ASSAULT
+      <div className="relative border-l-8 border-orange-500 pl-6 md:pl-8 py-4 bg-zinc-950/40 backdrop-blur-sm border-r border-y border-zinc-900 shadow-[20px_20px_40px_-20px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0H100V10H0V0ZM0 20H100V30H0V20ZM0 40H100V50H0V40ZM0 60H100V70H0V60ZM0 80H100V90H0V80Z" fill="currentColor" />
+          </svg>
+        </div>
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50 italic transform -skew-x-2">
+          DAILY <span className="text-orange-500">ASSAULT</span>
         </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base font-black tracking-widest uppercase mt-1">
-          TODAY IS A GOOD DAY TO SUFFER. NO REASONABLE EXCUSES.
+        <p className="text-zinc-500 dark:text-zinc-400 text-xs md:text-sm font-black tracking-[0.3em] uppercase mt-2 leading-none">
+          TODAY IS A GOOD DAY TO <span className="text-zinc-200">SUFFER</span>. NO REASONABLE EXCUSES.
         </p>
       </div>
 
@@ -139,18 +144,21 @@ export default async function Dashboard() {
               {wod.description}
             </p>
 
-            <div className="mt-6 border-t border-zinc-900 pt-4">
-              <p className="text-xs font-extrabold tracking-wider text-zinc-500 uppercase mb-3">
-                COMBAT LINEUP:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-8 border-t border-zinc-900 pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="h-[1px] w-4 bg-orange-500" />
+                <p className="text-xs font-black tracking-[0.2em] text-zinc-500 uppercase">
+                  COMBAT LINEUP: <span className="text-zinc-700">PREPARE FOR IMPACT</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {wod.exercises.slice(0, 4).map((ex, i) => (
-                  <div key={ex.name} className="flex items-center gap-3 bg-zinc-900/50 p-3 border border-zinc-900">
-                    <span className="font-black text-sm text-orange-500">0{i + 1}</span>
+                  <div key={ex.name} className="flex items-center gap-4 bg-zinc-900/30 p-4 border border-zinc-900 group/item hover:bg-orange-500/5 hover:border-orange-500/20 transition-all duration-200">
+                    <span className="font-black text-xl text-zinc-800 group-hover/item:text-orange-500/50 transition-colors italic">0{i + 1}</span>
                     <div>
-                      <p className="text-xs font-black text-zinc-200">{ex.name}</p>
-                      <p className="text-[10px] text-zinc-500">
-                        {ex.sets} sets × {ex.reps}
+                      <p className="text-sm font-black text-zinc-200 group-hover/item:text-zinc-50 transition-colors uppercase italic">{ex.name}</p>
+                      <p className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase mt-0.5">
+                        {ex.sets} SETS <span className="text-orange-500/50">×</span> {ex.reps} REPS
                       </p>
                     </div>
                   </div>
