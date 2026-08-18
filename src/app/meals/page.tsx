@@ -6,12 +6,17 @@ export default async function MealsPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Section Header */}
-      <div className="border-l-4 border-orange-500 pl-4 md:pl-6 py-2">
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50">
-          NUTRITION SYSTEM
+      <div className="relative border-l-8 border-orange-500 pl-6 md:pl-8 py-4 bg-zinc-950/40 backdrop-blur-sm border-r border-y border-zinc-900 shadow-[20px_20px_40px_-20px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0H100V10H0V0ZM0 20H100V30H0V20ZM0 40H100V50H0V40ZM0 60H100V70H0V60ZM0 80H100V90H0V80Z" fill="currentColor" />
+          </svg>
+        </div>
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50 italic transform -skew-x-2">
+          NUTRITION <span className="text-orange-500">SYSTEM</span>
         </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base font-black tracking-widest uppercase mt-1">
-          KETO-OMAD PROTOCOLS. INGEST FUEL, NOT REFINED TRASH.
+        <p className="text-zinc-500 dark:text-zinc-400 text-xs md:text-sm font-black tracking-[0.3em] uppercase mt-2 leading-none">
+          KETO-OMAD PROTOCOLS. INGEST <span className="text-zinc-200">FUEL</span>, NOT REFINED TRASH.
         </p>
       </div>
 

@@ -150,26 +150,31 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
           })}
         </nav>
 
-        <div className="p-6 border-t border-zinc-900 bg-zinc-900/20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+        <div className="p-6 border-t border-zinc-900 bg-zinc-900/10">
+          <div className="flex items-center gap-4 p-3 bg-zinc-900/50 border border-zinc-800/50 rounded-sm mb-6">
+            <div className="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(249,115,22,0.1)]">
               🔥
             </div>
             <div>
-              <p className="text-xs text-zinc-500 font-extrabold tracking-wider uppercase">CURRENT STREAK</p>
-              <p className="text-lg font-black text-zinc-50">12 DAYS STRAIGHT</p>
+              <p className="text-[10px] text-zinc-500 font-extrabold tracking-[0.15em] uppercase leading-none mb-1">STREAK</p>
+              <p className="text-base font-black text-zinc-50 leading-none italic">12 DAYS <span className="text-orange-500">STRONG</span></p>
             </div>
           </div>
 
           {userEmail && (
-            <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-zinc-900">
-              <p className="text-[10px] text-zinc-500 font-bold truncate">{userEmail}</p>
-              <form action={signOutAction}>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1 px-1">
+                <p className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase">ACTIVE OPERATOR</p>
+                <p className="text-xs font-black text-zinc-400 truncate tracking-tight uppercase italic">{userEmail}</p>
+              </div>
+              
+              <form action={signOutAction} className="pt-2">
                 <button
                   type="submit"
-                  className="text-[10px] font-black tracking-widest uppercase text-zinc-500 hover:text-orange-500 transition-colors flex-shrink-0"
+                  className="w-full text-left text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500 hover:text-orange-500 transition-all duration-200 flex items-center gap-2 group"
                 >
-                  Sign out
+                  <span className="w-4 h-[1px] bg-zinc-800 group-hover:bg-orange-500/50 transition-colors"></span>
+                  TERMINATE SESSION
                 </button>
               </form>
             </div>
@@ -178,49 +183,28 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
       </aside>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-zinc-950 border-t border-zinc-900 flex items-center justify-around px-2 z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-900 flex items-center justify-around px-4 pb-safe z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
             <Link
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-150 ${
-                active ? "text-orange-500" : "text-zinc-500 hover:text-zinc-300"
+              className={`flex flex-col items-center justify-center flex-1 h-full py-3 transition-all duration-200 ${
+                active 
+                  ? "text-orange-500 scale-110" 
+                  : "text-zinc-600 hover:text-zinc-300"
               }`}
             >
-              <div className="mb-0.5">{item.icon}</div>
-              <span className="text-[9px] font-black tracking-widest uppercase">{item.label}</span>
+              <div className={`${active ? "drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" : ""}`}>
+                {item.icon}
+              </div>
+              <span className={`text-[8px] font-black tracking-[0.15em] uppercase mt-1.5 ${active ? "opacity-100" : "opacity-60"}`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}
-        {userEmail && (
-          <form
-            action={signOutAction}
-            className="flex flex-col items-center justify-center flex-1 h-full"
-          >
-            <button
-              type="submit"
-              className="flex flex-col items-center justify-center w-full h-full py-2 text-zinc-500 hover:text-orange-500 transition-all duration-150"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-5 h-5 mb-0.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"
-                />
-              </svg>
-              <span className="text-[9px] font-black tracking-widest uppercase">Exit</span>
-            </button>
-          </form>
-        )}
       </nav>
     </>
   );
