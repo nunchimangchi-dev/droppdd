@@ -215,3 +215,63 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
 
 `npm run lint` and `npm run build` re-verified clean with the fix included.
 
+# Handoff: Persistent Deployment (feat/deploy)
+
+- **Status**: Done. Implemented directly (not via gemini) — this is host
+  config more than repo code, and `docs/GEMINI-DEPLOY-PROMPT.md` exists if
+  a future pass needs to redo any of this, but there was no reason to
+  route it through an extra interactive-gemini round trip for what's
+  mostly `systemctl`/`tailscale` commands.
+- **What changed**:
+  - `~/.config/systemd/user/droppdd.service` — new unit, `WorkingDirectory`
+    `%h/Projects/droppdd`, `ExecStart=/usr/bin/npm run start -- -p 3001`
+    (absolute path to `npm`, not relying on systemd's default PATH resolving
+    it — verified `/usr/bin/npm` is already on that PATH, but used the
+    absolute path anyway for the same reason the deploy prompt called out:
+    this exact "works interactively, breaks under systemd" class of bug has
+    bitten CI here twice already). `Restart=on-failure`,
+    `WantedBy=default.target`. Enabled via `systemctl --user enable --now`;
+    confirmed `Linger=yes` was already set (from the dashboard's setup), so
+    it survives a reboot without a login session.
+  - `Environment=AUTH_URL=https://box.tail2b3f17.ts.net:8443/api/auth` set
+    in the unit itself — **not** in the shared dev `.env`, exactly per the
+    warning in the auth-phase section above (a hardcoded `AUTH_URL` there
+    would break local `localhost:3000` testing).
+  - `tailscale serve --bg --https=8443 3001` — droppdd now has its own
+    permanent tailnet slot on port 8443, separate from the dashboard's
+    default-443 root on 8787. Both coexist; verified with `tailscale serve
+    status` showing both mappings simultaneously.
+  - The Google OAuth client's authorized redirect URIs already included
+    `https://box.tail2b3f17.ts.net:8443/api/auth/callback/google` (added
+    ahead of time before this pass, specifically so it wouldn't be a
+    mid-task blocker).
+- **Verification performed**:
+  - `npm run build` clean before wiring up the service.
+  - `systemctl --user status droppdd` — active, running.
+  - `curl http://127.0.0.1:3001/` → `307` to the correct `:8443` host
+    (confirms the `AUTH_URL` env var is actually being read).
+  - `tailscale serve status` → both the dashboard (443→8787) and droppdd
+    (8443→3001) mappings present at once; dashboard re-confirmed still
+    `200` afterward.
+  - `curl https://box.tail2b3f17.ts.net:8443/api/auth/providers` → returns
+    the Google provider with `callbackUrl` matching exactly what's
+    registered in Cloud Console.
+  - **Real end-to-end Google sign-in verified live** against the deployed
+    `:8443` URL (browser automation on a connected Mac): dashboard rendered
+    authenticated, sign-out correctly cleared the session. One automation
+    hiccup along the way — coordinate-based clicks on the sign-in button
+    intermittently missed (viewport size appears to have shifted mid-session
+    on the remote browser); switched to a direct JS `.click()` and it
+    worked immediately. Checked the button's actual `getBoundingClientRect()`
+    and computed transforms afterward to rule out a real hit-box bug from
+    the design pass's CSS — none found, it was an automation-environment
+    artifact, not an app bug.
+- **Redeploy procedure for future code changes**: pull latest `main`,
+  `npm run build`, `systemctl --user restart droppdd`. The unit does not
+  rebuild on its own (deliberately — a build step inside `ExecStart` would
+  slow every restart/crash-recovery cycle).
+- **Known limitation**: `AUTH_URL` is hardcoded to
+  `box.tail2b3f17.ts.net:8443`. If the deployment ever moves off this host
+  or off Tailscale, that env var (and the registered OAuth redirect URI)
+  both need updating together.
+
