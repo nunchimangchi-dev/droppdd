@@ -158,26 +158,60 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     `https://box.tail2b3f17.ts.net/api/auth/callback/google` (prod, over
     `tailscale serve`, same pattern as the skyrise dashboard). Verified
     saved via a fresh page reload of the Cloud Console client editor.
-    Google notes propagation can take up to a few hours.
-  - Caveat: this assumes droppdd ends up served at the *root* of
+    - Google notes propagation can take up to a few hours.
+    - Caveat: this assumes droppdd ends up served at the *root* of
     `box.tail2b3f17.ts.net`. If it lands on a sub-path instead, this
     redirect URI needs updating first.
-- **Scope, per the prompt**: Auth.js (NextAuth) with the Google provider
-  only, Prisma adapter (adds `User`/`Account`/`Session`/`VerificationToken`
-  tables + a migration), plus a new `AllowedEmail` model gating sign-in to
-  specific addresses. Middleware protects all existing routes. No AI
-  integration, no deployment changes.
-- **Since the data-layer merge, two things the auth phase should know
-  about**:
-  - `package.json` now has a `postinstall: prisma generate` script — the
+    - **Scope, per the prompt**: Auth.js (NextAuth) with the Google provider
+    only, Prisma adapter (adds `User`/`Account`/`Session`/`VerificationToken`
+    tables + a migration), plus a new `AllowedEmail` model gating sign-in to
+    specific addresses. Middleware protects all existing routes. No AI
+    integration, no deployment changes.
+    - **Since the data-layer merge, two things the auth phase should know
+    about**:
+    - `package.json` now has a `postinstall: prisma generate` script — the
     generated Prisma client is gitignored and regenerates automatically on
     install. Any new models added for auth just need a migration, not a
     manual generate step.
-  - CI (`.github/workflows/ci.yml`) now runs `prisma migrate deploy` and
+    - CI (`.github/workflows/ci.yml`) now runs `prisma migrate deploy` and
     `prisma db seed` (with `DATABASE_URL` supplied inline) before
     `npm run build`, because the pages are static and query Prisma at
     build time. This was needed to get PR #1 green — the auth phase will
     need its new migration(s) to apply cleanly under that same flow.
-- **Branch plan**: prompt assumes starting from `main` on a fresh
-  `feat/auth` branch (PR #1 is merged, so this is unblocked branch-wise —
-  only the Bitwarden/`.env` step remains).
+    - **Branch plan**: prompt assumes starting from `main` on a fresh
+    `feat/auth` branch (PR #1 is merged, so this is unblocked branch-wise —
+    only the Bitwarden/`.env` step remains).
+
+    # Handoff: Cosmetic Design Pass (feat/design-pass)
+
+    - **Goal**: Refine the visual energy of the app to match the "aggressive fitness" theme and resolve mobile navigation crowding.
+    - **What Changed**:
+    - **Mobile Navigation Redesign**:
+    - Relocated "Sign out" (now "Exit") from the crowded bottom nav to the mobile top header.
+    - Updated `src/app/layout.tsx` to include the sign-out button next to the streak badge in the mobile header.
+    - Updated `src/app/components/Navbar.tsx` to remove the 5th item, giving the remaining 4 items (Dashboard, Workouts, Meals, Progress) more breathing room and better visual weighting (including a subtle "glow" for active icons).
+    - **Sign-in Page Transformation**:
+    - Redesigned `src/app/signin/page.tsx` from a bare box to a high-intensity "Operational Access" portal.
+    - Added a textured background (diagonal orange stripes), a brutalist-style card with sharp shadows, and improved typography (skewed italic headers, tracking-heavy labels).
+    - CSS-only treatment; no new dependencies or client-side JS added.
+    - **General Consistency & Hierarchy Pass**:
+    - **Sidebar Footer**: Refined the desktop sidebar footer in `Navbar.tsx`. Added better spacing, separated the streak block with a distinct background, and changed the sign-out link to "TERMINATE SESSION" with more visual weight.
+    - **Page Headers**: Updated the headers for Dashboard (`/`), Workouts (`/workouts`), and Meals (`/meals`) to be more aggressive (larger, skewed italics, border accents, and decorative SVG background patterns).
+    - **Dashboard WOD Card**: Refined the "Combat Lineup" section for better clarity and visual punch.
+    - **Verification**:
+    - `npm run lint`: Passed.
+    - `npm run build`: Passed (Next.js 16.x Turbopack).
+    - **Note for Reviewer**:
+    - Visual appearance was not verified in a browser (no GUI access). Changes were made based on existing theme tokens and project instructions. Human review with a browser is required for final aesthetic validation.
+    - No functional, data, or auth logic was touched.
+
+## Human review (browser-verified)
+
+Reviewed live against the actual `tailscale serve` production URL (temporarily pointed at droppdd, restored to the dashboard afterward), signed in for real to check the authenticated pages. Overall: strong pass — the sign-in page redesign, page headers, and mobile nav relocation all read well and match the app's tone.
+
+One real bug found and fixed: the Dashboard WOD card's "Combat Lineup" rendered `{ex.sets} SETS × {ex.reps} REPS`, but `reps` in the mock data already includes the word ("20 reps", "8 reps @ 80% 1RM") — so it displayed as "4 SETS × 20 REPS REPS". Dropped the trailing literal " REPS" in `src/app/page.tsx`; the equivalent list on `/workouts` was never affected (it doesn't append a suffix).
+
+Confirmed via DOM inspection: the mobile top-header sign-out button is real and wired (icon-only, `title="Sign out"`, posts to the current page). Confirmed the "AI Tactical Nutrition" mock panel on `/meals` predates this pass (from the original app-shell build) — this pass only touched that page's header, scope stayed cosmetic-only as instructed.
+
+`npm run lint` and `npm run build` re-verified clean with the fix included.
+

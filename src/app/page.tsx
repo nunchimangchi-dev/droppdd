@@ -158,7 +158,7 @@ export default async function Dashboard() {
                     <div>
                       <p className="text-sm font-black text-zinc-200 group-hover/item:text-zinc-50 transition-colors uppercase italic">{ex.name}</p>
                       <p className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase mt-0.5">
-                        {ex.sets} SETS <span className="text-orange-500/50">×</span> {ex.reps} REPS
+                        {ex.sets} SETS <span className="text-orange-500/50">×</span> {ex.reps}
                       </p>
                     </div>
                   </div>
