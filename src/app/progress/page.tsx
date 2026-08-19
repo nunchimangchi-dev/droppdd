@@ -1,8 +1,18 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function ProgressPage() {
-  const progress = await prisma.progress.findFirst();
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+
+  const progress = await prisma.progress.findFirst({
+    where: { userId: session.user.id },
+  });
   const weightHistory = await prisma.weightRecord.findMany({
+    where: { userId: session.user.id },
     orderBy: { id: 'asc' },
   });
 
