@@ -56,24 +56,35 @@ async function main() {
     });
   }
 
-  // Seed Progress and WeightRecords
-  await prisma.progress.create({
-    data: {
-      currentStreak: mockProgress.currentStreak,
-      bestStreak: mockProgress.bestStreak,
-      targetWeight: mockProgress.targetWeight,
-      currentWeight: mockProgress.currentWeight,
-      startWeight: mockProgress.startWeight,
-    },
-  });
-
-  for (const record of mockProgress.weightHistory) {
-    await prisma.weightRecord.create({
+  // Seed Progress and WeightRecords - these belong to a real signed-in user
+  // now, and users only ever get created via Auth.js on actual Google
+  // sign-in (never seeded). A fresh CI/deploy DB has none yet, so there's
+  // nothing to attach this demo data to - skip it rather than fabricate a
+  // user, and seed it for whichever user already exists locally.
+  const existingUser = await prisma.user.findFirst();
+  if (existingUser) {
+    await prisma.progress.create({
       data: {
-        date: record.date,
-        weight: record.weight,
+        userId: existingUser.id,
+        currentStreak: mockProgress.currentStreak,
+        bestStreak: mockProgress.bestStreak,
+        targetWeight: mockProgress.targetWeight,
+        currentWeight: mockProgress.currentWeight,
+        startWeight: mockProgress.startWeight,
       },
     });
+
+    for (const record of mockProgress.weightHistory) {
+      await prisma.weightRecord.create({
+        data: {
+          userId: existingUser.id,
+          date: record.date,
+          weight: record.weight,
+        },
+      });
+    }
+  } else {
+    console.log("No User row yet (sign in once via Google first) - skipping Progress/WeightRecord seed.");
   }
 
   // Seed the sign-in allowlist from ALLOWED_EMAILS (comma-separated), if set.

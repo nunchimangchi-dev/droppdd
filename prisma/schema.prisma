@@ -50,12 +50,18 @@ model Meal {
 
 model WeightRecord {
   id     Int    @id @default(autoincrement())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   date   String
   weight Float
 }
 
+// One row per user (queried with findFirst({ where: { userId } })), not
+// enforced with @@unique here since nothing today creates a second row.
 model Progress {
-  id             Int   @id @default(autoincrement())
+  id             Int    @id @default(autoincrement())
+  userId         String
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentStreak  Int
   bestStreak     Int
   targetWeight   Float
@@ -77,6 +83,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   wagers        Wager[]
+  progress      Progress[]
+  weightRecords WeightRecord[]
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,
