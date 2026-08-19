@@ -6,6 +6,8 @@ import { evaluateWager, impliedWeeklyRatePercent } from "@/lib/wagers";
 const ERROR_MESSAGES: Record<string, string> = {
   "no-progress": "Log some progress first — a wager needs a starting point to measure against.",
   "missing-fields": "Every field is required.",
+  "invalid-metric": "Pick one of the listed metrics.",
+  "invalid-target": "Target value has to be a number.",
   "invalid-date": "End date has to be in the future.",
   "too-aggressive":
     "That pace is faster than we'll let you wager on — capped at ~1% bodyweight/week. Pick a lighter target or a longer end date.",
@@ -66,9 +68,17 @@ export default async function WagersPage({
       redirect("/wagers?error=missing-fields");
     }
 
+    if (metric !== "WEIGHT_TARGET" && metric !== "STREAK_TARGET") {
+      redirect("/wagers?error=invalid-metric");
+    }
+
     const targetValue = Number(targetValueRaw);
     const endDate = new Date(endDateRaw);
     const now = new Date();
+
+    if (Number.isNaN(targetValue)) {
+      redirect("/wagers?error=invalid-target");
+    }
 
     if (Number.isNaN(endDate.getTime()) || endDate <= now) {
       redirect("/wagers?error=invalid-date");
