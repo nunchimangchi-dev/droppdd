@@ -138,13 +138,13 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:h-screen md:sticky md:top-0 md:bg-zinc-950 md:text-zinc-50 border-r border-zinc-900 flex-shrink-0">
-        <div className="p-6 border-b border-zinc-900">
+      <aside className="hidden md:flex md:flex-col md:w-64 md:h-screen md:sticky md:top-0 md:bg-brand-card md:text-brand-text border-r border-brand-border flex-shrink-0">
+        <div className="p-6 border-b border-brand-border">
           <Link href="/" className="group block focus:outline-none">
-            <span className="font-black tracking-widest text-3xl text-orange-500 italic block group-hover:text-orange-400 transition-colors">
-              DROPPDD<span className="text-zinc-50">.</span>
+            <span className="font-black tracking-widest text-3xl text-brand-orange italic block group-hover:text-white transition-colors">
+              DROPPDD<span className="text-brand-text">.</span>
             </span>
-            <span className="text-[10px] tracking-[0.2em] font-extrabold text-zinc-500 block mt-1 uppercase">
+            <span className="text-[10px] tracking-[0.2em] font-extrabold text-brand-text-muted block mt-1 uppercase">
               AGGRESSIVE ATHLETICISM
             </span>
           </Link>
@@ -157,10 +157,10 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-sm font-black text-sm tracking-widest transition-all duration-200 border-l-4 ${
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-none font-black text-sm tracking-widest transition-all duration-200 border-l-4 ${
                   active
-                    ? "bg-zinc-900 border-orange-500 text-orange-500"
-                    : "border-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200"
+                    ? "bg-brand-bg border-brand-orange text-brand-orange"
+                    : "border-transparent text-brand-text-muted hover:bg-brand-bg/50 hover:text-brand-text"
                 }`}
               >
                 {item.icon}
@@ -170,30 +170,30 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
           })}
         </nav>
 
-        <div className="p-6 border-t border-zinc-900 bg-zinc-900/10">
-          <div className="flex items-center gap-4 p-3 bg-zinc-900/50 border border-zinc-800/50 rounded-sm mb-6">
-            <div className="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+        <div className="p-6 border-t border-brand-border bg-brand-bg/10">
+          <div className="flex items-center gap-4 p-3 bg-brand-bg/40 border border-brand-border rounded-none mb-6">
+            <div className="w-10 h-10 rounded-full bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(255,84,0,0.15)]">
               🔥
             </div>
             <div>
-              <p className="text-[10px] text-zinc-500 font-extrabold tracking-[0.15em] uppercase leading-none mb-1">STREAK</p>
-              <p className="text-base font-black text-zinc-50 leading-none italic">12 DAYS <span className="text-orange-500">STRONG</span></p>
+              <p className="text-[10px] text-brand-text-muted font-extrabold tracking-[0.15em] uppercase leading-none mb-1">STREAK</p>
+              <p className="text-sm font-black text-brand-text leading-none italic">12 DAYS <span className="text-brand-orange">STRONG</span></p>
             </div>
           </div>
 
           {userEmail && (
             <div className="space-y-4">
               <div className="flex flex-col gap-1 px-1">
-                <p className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase">ACTIVE OPERATOR</p>
-                <p className="text-xs font-black text-zinc-400 truncate tracking-tight uppercase italic">{userEmail}</p>
+                <p className="text-[9px] text-brand-text-muted/65 font-bold tracking-widest uppercase">ACTIVE OPERATOR</p>
+                <p className="text-xs font-black text-brand-text-muted truncate tracking-tight uppercase italic">{userEmail}</p>
               </div>
               
               <form action={signOutAction} className="pt-2">
                 <button
                   type="submit"
-                  className="w-full text-left text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500 hover:text-orange-500 transition-all duration-200 flex items-center gap-2 group"
+                  className="w-full text-left text-[10px] font-black tracking-[0.2em] uppercase text-brand-text-muted hover:text-brand-orange transition-all duration-200 flex items-center gap-2 group cursor-pointer"
                 >
-                  <span className="w-4 h-[1px] bg-zinc-800 group-hover:bg-orange-500/50 transition-colors"></span>
+                  <span className="w-4 h-[1px] bg-brand-border group-hover:bg-brand-orange/50 transition-colors"></span>
                   TERMINATE SESSION
                 </button>
               </form>
@@ -203,7 +203,7 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
       </aside>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-900 flex items-center justify-around px-4 pb-safe z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-brand-card/95 backdrop-blur-md border-t border-brand-border flex items-center justify-around px-4 pb-safe z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
@@ -212,11 +212,11 @@ export default function Navbar({ userEmail, signOutAction }: NavbarProps) {
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full py-3 transition-all duration-200 ${
                 active 
-                  ? "text-orange-500 scale-110" 
-                  : "text-zinc-600 hover:text-zinc-300"
+                  ? "text-brand-orange scale-110" 
+                  : "text-brand-text-muted hover:text-brand-text"
               }`}
             >
-              <div className={`${active ? "drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" : ""}`}>
+              <div className={`${active ? "drop-shadow-[0_0_8px_rgba(255,84,0,0.4)]" : ""}`}>
                 {item.icon}
               </div>
               <span className={`text-[8px] font-black tracking-[0.15em] uppercase mt-1.5 ${active ? "opacity-100" : "opacity-60"}`}>

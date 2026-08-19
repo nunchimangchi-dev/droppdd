@@ -324,3 +324,39 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
   single-instance personal deployment), and a `/wagers` page to actually
   see them.
 
+# Handoff: Bold High-Contrast Visual Design Overhaul (feat/design-pass-2) - August 19, 2026
+
+- **Goal**: Implement a custom, bold, aggressive "high-contrast brutalist" visual design system across the application and create a high-stakes, Beeminder-inspired visual aesthetic for the `/wagers` page.
+- **What Changed**:
+  - **Design System Formulation (`globals.css`)**:
+    - Discarded the default white/black system duality in favor of a dark-only, high-contrast, premium fitness brand aesthetic (inspired by Gymshark, WHOOP, Kill Crew, and Darc Sport). Enforced matte black (`#050505`) as the base background.
+    - Defined custom CSS variables for cohesive brand colors: deep base backgrounds, border shades, text shades, high-voltage warning orange (`#ff5400`), safe green (`#00ff66`), warning yellow (`#ffb800`), and alert/danger red (`#ff3333`).
+    - Configured `@theme inline` to map these properties cleanly to Tailwind v4 theme tokens.
+    - Added global, highly reusable brutalist utility classes:
+      - `.panel-aggressive`: Deep, flat card background with distinct 1px borders and subtle hover state transformation.
+      - `.btn-assault`: Slanted, high-contrast primary action button utilizing a `-skew-x-4` transform, black tracking-wide text, and high-voltage orange background.
+      - `.hazard-stripes`: Custom `repeating-linear-gradient` representing urgency, risk, and active stakes.
+      - `.heading-mega`: Skewed, massive italic headers.
+      - `.label-micro`: tracking-widest uppercase metadata labels.
+  - **High-Stakes `/wagers` Refactoring (Priority Page)**:
+    - Entirely rebuilt the `/wagers` UI using the new components and themes.
+    - Replaced generic SaaS tables and rounded elements with sharp `.panel-aggressive` containers.
+    - Applied `.hazard-stripes` and warning colors (Warning Yellow, Danger Red) directly to active wagers based on proximity to the end date (inspired by Beeminder's color key indicating buffer remaining), highlighting stakes at risk with high-energy fire indicators.
+    - Transformed historical wagers to show stark success states (Safe Green for WON, Danger Red for LOST) using thick, uncompromising custom borders and badges.
+    - Cleaned up form inputs and select menus to feature dark inputs with solid borders and focus glowing effects.
+  - **System-Wide Token Integration & Page Refactoring**:
+    - Cleaned up all pages (`/`, `/meals`, `/progress`, `/workouts`, `/workouts/[id]`, `/signin`, `Navbar.tsx`) by stripping out legacy `bg-white dark:bg-zinc-950` classes, dual-theme `dark:` prefixes, and scattered inline Tailwind color/border strings.
+    - Standardized all cards to use `.panel-aggressive`, headings to use `.heading-mega`, subheaders to use `.label-micro`, and primary actions to use `.btn-assault`.
+    - Integrated safe-green progress indicators for trend visualization in the `/progress` physical data page.
+    - Upgraded the `/signin` screen to utilize the unified `.btn-assault` button and proper brand colors.
+    - Aligned `Navbar.tsx` sidebar background, active nav borders, and streak indicators to use the new high-voltage `--accent-volt` token.
+- **Key Decisions**:
+  - Enforced dark mode by default globally. High-contrast athletic aesthetics rely on deep, aggressive dark colors, so removing light-mode variations ensures a cohesive, high-energy user experience while making the codebase far cleaner and more maintainable.
+  - Preserved every single server action, auth callback, data fetching query, and database transaction exactly as they were. No functional or data logic was altered.
+- **Verification**:
+  - `npm run lint`: Clean pass.
+  - `npm run build`: Clean pass. Next.js 16/Turbopack successfully compiled all dynamic pages and middleware routing without any warnings.
+- **Note for Reviewer**:
+  - Visual appearance was not verified in a browser (no GUI access). Changes were made based on existing theme tokens and project instructions. Human review with a browser is required for final aesthetic validation.
+
+
