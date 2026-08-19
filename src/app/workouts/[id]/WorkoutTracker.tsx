@@ -88,37 +88,38 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
 
   if (workoutFinished) {
     return (
-      <div className="bg-black text-zinc-100 border-2 border-orange-500 p-8 text-center max-w-xl mx-auto space-y-6 animate-scale-up">
+      <div className="bg-brand-card text-brand-text border-2 border-brand-orange p-8 text-center max-w-xl mx-auto space-y-6 animate-scale-up shadow-[0_0_30px_rgba(255,84,0,0.1)] relative">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] hazard-stripes" />
         <div className="text-6xl">🏆</div>
-        <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter text-orange-500 uppercase">
+        <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter text-brand-orange uppercase">
           ASSAULT COMPLETE
         </h2>
-        <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed uppercase tracking-wider">
-          YOU CONQUERED <span className="text-zinc-50 font-extrabold">{workout.title}</span>.
+        <p className="text-sm text-brand-text-muted max-w-md mx-auto leading-relaxed uppercase tracking-wider">
+          YOU CONQUERED <span className="text-brand-text font-extrabold">{workout.title}</span>.
           YOU TOOK THE PAIN, EMBRACED THE STRUGGLE, AND SHREDDED YOUR EXCUSES.
         </p>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-sm grid grid-cols-2 gap-4 text-center">
+        <div className="bg-brand-bg border border-brand-border p-4 rounded-none grid grid-cols-2 gap-4 text-center">
           <div>
-            <p className="text-[10px] text-zinc-500 font-extrabold uppercase">DURATION</p>
-            <p className="text-xl font-black text-zinc-100">{workout.duration}</p>
+            <p className="text-[10px] text-brand-text-muted font-extrabold uppercase">DURATION</p>
+            <p className="text-xl font-black text-brand-text italic">{workout.duration}</p>
           </div>
           <div>
-            <p className="text-[10px] text-zinc-500 font-extrabold uppercase">CALORIES SCORCHED</p>
-            <p className="text-xl font-black text-orange-500">~{workout.caloriesBurn} KCAL</p>
+            <p className="text-[10px] text-brand-text-muted font-extrabold uppercase">CALORIES SCORCHED</p>
+            <p className="text-xl font-black text-brand-orange italic">~{workout.caloriesBurn} KCAL</p>
           </div>
         </div>
 
         <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
-            className="bg-orange-500 hover:bg-orange-600 text-black font-black text-xs tracking-widest px-6 py-3.5 transition-all duration-150 uppercase text-center"
+            className="btn-assault inline-flex text-center"
           >
-            RETURN TO DASHBOARD
+            <span>RETURN TO DASHBOARD</span>
           </Link>
           <Link
             href="/workouts"
-            className="border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 text-zinc-300 font-black text-xs tracking-widest px-6 py-3.5 transition-all duration-150 uppercase text-center"
+            className="border border-brand-border hover:border-brand-border-strong hover:bg-brand-card-hover text-brand-text font-black text-xs tracking-widest px-6 py-4 transition-all duration-150 uppercase text-center"
           >
             TRAIN AGAIN
           </Link>
@@ -132,24 +133,24 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
       {/* Upper Tracker Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Progress Card */}
-        <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-6 rounded-sm flex flex-col justify-between">
+        <div className="panel-aggressive flex flex-col justify-between">
           <div>
-            <span className="text-[10px] tracking-[0.2em] font-extrabold text-orange-500 uppercase">
+            <span className="text-[10px] tracking-[0.2em] font-extrabold text-brand-orange uppercase leading-none">
               ACTIVE SESSION PROGRESS
             </span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <h3 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+            <div className="flex items-baseline gap-2 mt-4">
+              <h3 className="text-4xl font-black tracking-tight text-brand-text italic uppercase leading-none">
                 {percentComplete}%
               </h3>
-              <span className="text-xs font-black text-zinc-500 uppercase">
+              <span className="text-xs font-black text-brand-text-muted uppercase italic">
                 ({completedSetsCount} / {totalSetsCount} sets)
               </span>
             </div>
           </div>
           <div className="mt-4">
-            <div className="w-full bg-zinc-200 dark:bg-zinc-900 h-2 rounded-none overflow-hidden">
+            <div className="w-full bg-brand-bg h-2 rounded-none overflow-hidden">
               <div
-                className="bg-orange-500 h-full transition-all duration-350"
+                className="bg-brand-orange h-full transition-all duration-350"
                 style={{ width: `${percentComplete}%` }}
               />
             </div>
@@ -157,74 +158,59 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
         </div>
 
         {/* REST TIMER COMPONENT */}
-        <div className="lg:col-span-2 bg-zinc-950 border border-zinc-900 p-6 rounded-sm text-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center sm:text-left">
-            <span className="text-[10px] tracking-[0.2em] font-extrabold text-orange-500 uppercase block">
+        <div className="lg:col-span-2 bg-brand-card border border-brand-border p-6 rounded-none text-brand-text flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-3 text-center sm:text-left">
+            <span className="text-[10px] tracking-[0.2em] font-extrabold text-brand-orange uppercase block leading-none">
               TACTICAL REST TIMER
             </span>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-brand-text-muted max-w-md">
               Trigger rest intervals between your massive combat sets. Let your heart recover before the next strike.
             </p>
             <div className="flex flex-wrap gap-2 justify-center sm:justify-start pt-1">
-              <button
-                onClick={() => startTimer(30)}
-                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 font-extrabold text-[10px] tracking-wider px-3 py-1.5 uppercase rounded-none transition-colors"
-              >
-                +30S
-              </button>
-              <button
-                onClick={() => startTimer(60)}
-                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 font-extrabold text-[10px] tracking-wider px-3 py-1.5 uppercase rounded-none transition-colors"
-              >
-                +60S
-              </button>
-              <button
-                onClick={() => startTimer(90)}
-                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 font-extrabold text-[10px] tracking-wider px-3 py-1.5 uppercase rounded-none transition-colors"
-              >
-                +90S
-              </button>
-              <button
-                onClick={() => startTimer(120)}
-                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 font-extrabold text-[10px] tracking-wider px-3 py-1.5 uppercase rounded-none transition-colors"
-              >
-                +120S
-              </button>
+              {[30, 60, 90, 120].map((sec) => (
+                <button
+                  key={sec}
+                  onClick={() => startTimer(sec)}
+                  className="bg-brand-bg hover:bg-brand-orange hover:text-black border border-brand-border text-brand-text font-black text-[10px] tracking-wider px-3.5 py-2 uppercase rounded-none transition-all cursor-pointer"
+                >
+                  +{sec}S
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 bg-zinc-900/50 border border-zinc-900 min-w-[140px] h-28 relative">
+          <div className="flex flex-col items-center justify-center p-3 bg-brand-bg border border-brand-border min-w-[145px] h-28 relative">
             {timerActive ? (
               <div className="text-center space-y-1">
-                <p className="text-3xl font-black text-orange-500 tabular-nums animate-pulse">
+                <p className="text-3xl font-black text-brand-orange tabular-nums animate-pulse italic leading-none">
                   {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
                 </p>
                 <button
                   onClick={cancelTimer}
-                  className="text-[9px] font-extrabold tracking-widest text-red-500 hover:text-red-400 uppercase"
+                  className="text-[9px] font-extrabold tracking-widest text-brand-danger hover:text-red-400 uppercase cursor-pointer"
                 >
                   CANCEL
                 </button>
               </div>
             ) : timerAlert ? (
               <div className="text-center space-y-2 animate-bounce">
-                <p className="text-xs font-black text-red-500 uppercase tracking-widest">REST UP!</p>
+                <p className="text-xs font-black text-brand-danger uppercase tracking-widest leading-none">REST UP!</p>
                 <button
                   onClick={() => setTimerAlert(false)}
-                  className="bg-red-500 text-black text-[9px] font-black px-2 py-1 uppercase"
+                  className="bg-brand-danger text-black text-[9px] font-black px-2.5 py-1.5 uppercase cursor-pointer"
                 >
                   DISMISS
                 </button>
               </div>
             ) : (
-              <div className="text-center text-zinc-600">
+              <div className="text-center text-brand-text-muted/40">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-8 h-8 mx-auto mb-1 opacity-40"
+                  className="w-8 h-8 mx-auto mb-1 opacity-30"
                 >
                   <path
                     strokeLinecap="round"
@@ -232,7 +218,7 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
                     d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                   />
                 </svg>
-                <p className="text-[10px] font-black tracking-widest uppercase">IDLE</p>
+                <p className="text-[10px] font-black tracking-widest uppercase leading-none">IDLE</p>
               </div>
             )}
           </div>
@@ -241,30 +227,30 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
 
       {/* Exercises Combat List */}
       <div className="space-y-6">
-        <h3 className="text-lg font-black tracking-wider text-zinc-400 uppercase">
+        <h3 className="text-lg font-black tracking-wider text-brand-text-muted uppercase">
           COMBAT ENGAGEMENTS IN SEQUENCE:
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {workout.exercises.map((ex, exIdx) => (
             <div
               key={ex.name}
-              className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-5 md:p-6 rounded-sm shadow-sm"
+              className="panel-aggressive space-y-6"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="font-black text-lg text-orange-500">0{exIdx + 1}</span>
-                    <h4 className="text-lg font-black text-zinc-900 dark:text-zinc-50">{ex.name}</h4>
+                    <span className="font-black text-xl text-brand-orange italic">0{exIdx + 1}</span>
+                    <h4 className="text-xl font-black text-brand-text uppercase italic">{ex.name}</h4>
                   </div>
-                  <p className="text-xs text-zinc-500 font-extrabold uppercase mt-1">
-                    {ex.sets} sets × {ex.reps} •{" "}
+                  <p className="text-xs text-brand-text-muted font-extrabold uppercase mt-1">
+                    {ex.sets} SETS × {ex.reps} REPS •{" "}
                     {ex.rest === "None" || ex.rest === "No rest"
-                      ? "No rest"
-                      : `${ex.rest} rest`}
+                      ? "NO REST RESTRICTION"
+                      : `${ex.rest} TACTICAL REST`}
                   </p>
                   {ex.notes && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 bg-zinc-50 dark:bg-zinc-900/50 p-3 border-l-2 border-zinc-300 dark:border-zinc-800">
+                    <p className="text-xs text-brand-text-muted mt-3 bg-brand-bg border-l-2 border-brand-orange/40 p-3">
                       💡 {ex.notes}
                     </p>
                   )}
@@ -281,7 +267,7 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
                         : 60;
                       startTimer(seconds);
                     }}
-                    className="self-start text-[10px] bg-zinc-100 dark:bg-zinc-900 hover:bg-orange-500 hover:text-black border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-black px-3 py-1.5 uppercase transition-all"
+                    className="self-start text-[10px] bg-brand-bg hover:bg-brand-orange hover:text-black border border-brand-border text-brand-text font-black px-3.5 py-2 uppercase transition-all cursor-pointer"
                   >
                     ⏱️ START {ex.rest} REST
                   </button>
@@ -289,7 +275,7 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
               </div>
 
               {/* Set Checkboxes Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-6 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-6 border-t border-brand-border pt-4">
                 {Array(ex.sets)
                   .fill(0)
                   .map((_, setIdx) => {
@@ -298,18 +284,18 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
                       <button
                         key={setIdx}
                         onClick={() => toggleSet(ex.name, setIdx)}
-                        className={`flex items-center justify-between p-3 border rounded-none transition-all duration-150 ${
+                        className={`flex items-center justify-between p-3 border rounded-none transition-all duration-150 cursor-pointer ${
                           isDone
-                            ? "bg-orange-500/10 border-orange-500 text-orange-500 font-black"
-                            : "bg-zinc-50 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-900 text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 font-semibold"
+                            ? "bg-brand-orange/15 border-brand-orange text-brand-orange font-black"
+                            : "bg-brand-bg border-brand-border text-brand-text-muted hover:border-brand-border-strong hover:text-brand-text font-bold"
                         }`}
                       >
                         <span className="text-[10px] tracking-wider uppercase">SET {setIdx + 1}</span>
                         <div
                           className={`w-4 h-4 border flex items-center justify-center ${
                             isDone
-                              ? "border-orange-500 bg-orange-500 text-black"
-                              : "border-zinc-300 dark:border-zinc-700 bg-transparent"
+                              ? "border-brand-orange bg-brand-orange text-black"
+                              : "border-brand-border bg-transparent"
                           }`}
                         >
                           {isDone && (
@@ -335,10 +321,10 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
       </div>
 
       {/* Bottom Finish Action */}
-      <div className="pt-6 border-t border-zinc-200 dark:border-zinc-900 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="pt-6 border-t border-brand-border flex flex-col sm:flex-row justify-between items-center gap-4">
         <Link
           href="/workouts"
-          className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-black uppercase tracking-widest flex items-center gap-2"
+          className="text-xs text-brand-text-muted hover:text-brand-orange font-black uppercase tracking-widest flex items-center gap-2 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -355,9 +341,9 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
 
         <button
           onClick={handleFinishWorkout}
-          className="bg-orange-500 hover:bg-orange-600 text-black font-black text-xs tracking-widest px-8 py-4 w-full sm:w-auto transition-all duration-150 uppercase"
+          className="btn-assault w-full sm:w-auto"
         >
-          FINISH WORKOUT & CLAIM VICTORY
+          <span>FINISH WORKOUT & CLAIM VICTORY</span>
         </button>
       </div>
     </div>

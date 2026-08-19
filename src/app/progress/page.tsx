@@ -17,54 +17,69 @@ export default async function ProgressPage() {
   });
 
   if (!progress) {
-    return <div className="text-center py-16">No progress data found.</div>;
+    return <div className="text-brand-text font-black text-center py-16 uppercase">No progress data found.</div>;
   }
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="border-l-4 border-orange-500 pl-4 md:pl-6 py-2">
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50">
-          PHYSICAL DATA
+      <div className="relative border-l-8 border-brand-orange pl-6 md:pl-8 py-4 bg-brand-card/40 backdrop-blur-sm border-r border-y border-brand-border shadow-[20px_20px_40px_-20px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0H100V10H0V0ZM0 20H100V30H0V20ZM0 40H100V50H0V40ZM0 60H100V70H0V60ZM0 80H100V90H0V80Z" fill="currentColor" className="text-brand-orange" />
+          </svg>
+        </div>
+        <h1 className="heading-mega">
+          PHYSICAL <span className="text-brand-orange">DATA</span>
         </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base font-black tracking-widest uppercase mt-1">
-          TRACK YOUR ANNIHILATION OF EXCESS MASS.
+        <p className="text-brand-text-muted text-xs md:text-sm font-black tracking-[0.3em] uppercase mt-2 leading-none">
+          TRACK YOUR ANNIHILATION OF EXCESS MASS. NO WEIGHT TO WASTE.
         </p>
       </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "CURRENT", value: `${progress.currentWeight} LBS` },
-          { label: "START", value: `${progress.startWeight} LBS` },
-          { label: "TARGET", value: `${progress.targetWeight} LBS` },
-          { label: "STREAK", value: `${progress.currentStreak} DAYS` },
+          { label: "CURRENT MASS", value: `${progress.currentWeight} LBS`, highlight: true },
+          { label: "STARTING MASS", value: `${progress.startWeight} LBS`, highlight: false },
+          { label: "TARGET MASS", value: `${progress.targetWeight} LBS`, highlight: false },
+          { label: "STREAK COUNT", value: `${progress.currentStreak} DAYS`, highlight: false },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-4 rounded-sm">
-            <p className="text-[10px] text-zinc-500 font-black tracking-widest uppercase">{stat.label}</p>
-            <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">{stat.value}</p>
+          <div key={stat.label} className="panel-aggressive">
+            <p className="label-micro mb-2">{stat.label}</p>
+            <p className={`text-2xl font-black italic uppercase ${stat.highlight ? "text-brand-orange" : "text-brand-text"}`}>
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
       {/* Static Visualization */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 p-6 rounded-sm">
-        <h2 className="text-lg font-black tracking-wider text-zinc-400 uppercase mb-6">WEIGHT LOSS TREND</h2>
+      <div className="panel-aggressive">
+        <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-6 flex items-center gap-2">
+          <span className="w-1.5 h-6 bg-brand-orange block" />
+          WEIGHT LOSS TREND / EXTERMINATION PATHWAY
+        </h2>
         
         <div className="space-y-4">
           {weightHistory.map((record) => {
-            const percentage = ( (progress.startWeight - record.weight) / (progress.startWeight - progress.targetWeight) ) * 100;
+            const percentage = ( (progress.startWeight - record.weight) / (progress.startWeight - progress.targetWeight) ) * 105;
+            // Bound percentage between 5 and 100
+            const boundedPercent = Math.min(Math.max(percentage, 5), 100);
             
             return (
               <div key={record.date} className="flex items-center gap-4">
-                <span className="text-xs font-black text-zinc-500 w-16 uppercase">{record.date}</span>
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 h-6 rounded-sm overflow-hidden flex items-center">
+                <span className="text-xs font-black text-brand-text-muted w-16 uppercase leading-none">{record.date}</span>
+                <div className="flex-1 bg-brand-bg h-6 rounded-none border border-brand-border overflow-hidden flex items-center">
                   <div 
-                    className="h-full bg-orange-500/80 transition-all duration-500" 
-                    style={{ width: `${Math.max(percentage, 5)}%` }} 
-                  />
+                    className="h-full bg-brand-orange/80 hover:bg-brand-orange transition-all duration-500 relative" 
+                    style={{ width: `${boundedPercent}%` }} 
+                  >
+                    {/* Subtle micro stripe reflection on progress bars */}
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.1] hazard-stripes" />
+                  </div>
                 </div>
-                <span className="text-xs font-black text-zinc-900 dark:text-zinc-50 w-20 text-right">{record.weight} LBS</span>
+                <span className="text-xs font-black text-brand-text w-20 text-right leading-none">{record.weight} LBS</span>
               </div>
             );
           })}

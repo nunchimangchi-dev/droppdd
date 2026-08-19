@@ -13,16 +13,16 @@ export default async function WorkoutDetailPage(props: {
 
   if (!workout) {
     return (
-      <div className="text-center py-16 space-y-4">
-        <h1 className="text-2xl font-black text-red-500 uppercase">REGIMEN NOT FOUND</h1>
-        <p className="text-zinc-500 max-w-md mx-auto text-sm">
+      <div className="text-center py-16 space-y-6 max-w-md mx-auto">
+        <h1 className="text-2xl font-black text-brand-danger uppercase italic">REGIMEN NOT FOUND</h1>
+        <p className="text-brand-text-muted text-sm">
           The requested training protocol does not exist or has been archived. Check your target parameters.
         </p>
         <Link
           href="/workouts"
-          className="inline-block bg-orange-500 text-black font-black text-xs tracking-widest px-6 py-3 uppercase"
+          className="btn-assault inline-flex"
         >
-          RETURN TO TRAINING LIST
+          <span>RETURN TO TRAINING LIST</span>
         </Link>
       </div>
     );
@@ -34,7 +34,7 @@ export default async function WorkoutDetailPage(props: {
       <div>
         <Link
           href="/workouts"
-          className="inline-flex items-center text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-black uppercase tracking-widest gap-2 mb-4 transition-colors"
+          className="inline-flex items-center text-xs text-brand-text-muted hover:text-brand-orange font-black uppercase tracking-widest gap-2 mb-4 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -42,23 +42,23 @@ export default async function WorkoutDetailPage(props: {
             viewBox="0 0 24 24"
             strokeWidth={2.5}
             stroke="currentColor"
-            className="w-3.5 h-3.5"
+            className="w-3.5 h-3.5 animate-pulse"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
           </svg>
           BACK TO REGIMENS
         </Link>
 
-        <div className="border-l-4 border-orange-500 pl-4 md:pl-6 py-2">
+        <div className="relative border-l-8 border-brand-orange pl-6 md:pl-8 py-4 bg-brand-card/40 backdrop-blur-sm border-r border-y border-brand-border shadow-[20px_20px_40px_-20px_rgba(0,0,0,0.5)]">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[10px] tracking-[0.2em] font-extrabold bg-zinc-900 text-orange-500 px-2 py-0.5 border border-zinc-850 uppercase">
+            <span className="text-[10px] tracking-[0.2em] font-extrabold bg-brand-bg text-brand-orange px-2.5 py-1 border border-brand-border uppercase leading-none">
               {workout.category}
             </span>
-            <span className="text-xs text-zinc-500 font-black uppercase">
-              {workout.duration} • {workout.target}
+            <span className="text-xs text-brand-text-muted font-black uppercase tracking-wider">
+              {workout.duration} • {workout.target} • {workout.caloriesBurn} KCAL
             </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-zinc-900 dark:text-zinc-50 mt-1 italic">
+          <h1 className="heading-mega mt-2">
             {workout.title}
           </h1>
         </div>
