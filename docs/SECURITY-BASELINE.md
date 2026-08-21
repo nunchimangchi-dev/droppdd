@@ -71,7 +71,7 @@ people. Required before that changes.
 | ORM-only queries | Already correct (Prisma throughout, no raw SQL found) |
 | Backup restore-tested | Verified 2026-08-21 — real rows, passed `PRAGMA integrity_check`, confirmed against the latest nightly snapshot |
 | Rate limiting | Not started |
-| Staging environment | Not started (infra now cheap — see staging-setup session prompt) |
+| Staging environment | Done 2026-08-21 — separate LXC (`droppdd-staging`, VLAN20, isolated), separate seeded SQLite DB, own systemd service, own Tailscale HTTPS URL. See `docs/STAGING.md`. |
 | Privacy Policy + Terms | Not started — `FUTURE-WAGERS.md` already flags this as required before Phase 3 (real money) |
 | GDPR export/delete | Not started |
 | Error tracking | Not started |
