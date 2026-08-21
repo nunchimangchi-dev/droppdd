@@ -15,6 +15,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Gated at "critical" rather than "high": there's a known high-severity
+      # finding (deepmerge-ts stack exhaustion, via @prisma/config) whose only
+      # fix path downgrades Prisma to 6.x, a breaking change we're not taking
+      # unreviewed. See docs/SECURITY-BASELINE.md. Revisit when Prisma 7
+      # picks up a patched deepmerge-ts.
+      - run: npm audit --audit-level=critical
       - run: npm run lint
       - run: npx prisma migrate deploy
         env:

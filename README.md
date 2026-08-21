@@ -44,6 +44,13 @@ regenerates the Prisma client automatically (`postinstall`).
 - AI-assisted meal planning, real-money wagers — planned, not started. See
   [`HANDOFF.md`](HANDOFF.md) and [`docs/FUTURE-WAGERS.md`](docs/FUTURE-WAGERS.md).
 
+## Security & compliance
+
+[`docs/SECURITY-BASELINE.md`](docs/SECURITY-BASELINE.md) — the standard
+this project (and future skyrise-built projects) should be held to, what's
+already done, and what's a hard gate before anything here goes public or
+touches real money.
+
 ## How this gets built
 
 Implementation passes are driven by structured prompts pasted into an AI

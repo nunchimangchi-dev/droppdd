@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { evaluateWager, impliedWeeklyRatePercent } from "@/lib/wagers";
@@ -10,6 +11,17 @@ const ERROR_MESSAGES: Record<string, string> = {
   "too-aggressive":
     "That pace is faster than we'll let you wager on — capped at ~1% bodyweight/week. Pick a lighter target or a longer end date.",
 };
+
+// Server-side validation for wager creation - the form's <select> and
+// input constraints only enforce this client-side, which is trivially
+// bypassed by anyone posting to the action directly.
+const createWagerSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  metric: z.enum(["WEIGHT_TARGET", "STREAK_TARGET"]),
+  targetValue: z.coerce.number().finite(),
+  stakeDescription: z.string().trim().min(1).max(500),
+  endDate: z.coerce.date(),
+});
 
 export default async function WagersPage({
   searchParams,
@@ -56,21 +68,22 @@ export default async function WagersPage({
     if (!session?.user?.id) redirect("/signin");
     const userId = session.user.id;
 
-    const title = formData.get("title")?.toString().trim();
-    const metric = formData.get("metric")?.toString();
-    const targetValueRaw = formData.get("targetValue")?.toString();
-    const stakeDescription = formData.get("stakeDescription")?.toString().trim();
-    const endDateRaw = formData.get("endDate")?.toString();
+    const parsed = createWagerSchema.safeParse({
+      title: formData.get("title"),
+      metric: formData.get("metric"),
+      targetValue: formData.get("targetValue"),
+      stakeDescription: formData.get("stakeDescription"),
+      endDate: formData.get("endDate"),
+    });
 
-    if (!title || !metric || !targetValueRaw || !stakeDescription || !endDateRaw) {
+    if (!parsed.success) {
       redirect("/wagers?error=missing-fields");
     }
 
-    const targetValue = Number(targetValueRaw);
-    const endDate = new Date(endDateRaw);
+    const { title, metric, targetValue, stakeDescription, endDate } = parsed.data;
     const now = new Date();
 
-    if (Number.isNaN(endDate.getTime()) || endDate <= now) {
+    if (endDate <= now) {
       redirect("/wagers?error=invalid-date");
     }
 
