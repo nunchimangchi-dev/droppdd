@@ -70,8 +70,9 @@ model Progress {
 }
 
 model AllowedEmail {
-  id    Int    @id @default(autoincrement())
-  email String @unique
+  id      Int     @id @default(autoincrement())
+  email   String  @unique
+  isAdmin Boolean @default(false)
 }
 
 model User {
