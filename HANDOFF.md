@@ -456,5 +456,92 @@ Because the agent does not have access to a browser, visual/aesthetic correctnes
    - Click "REVOKE ACCESS" next to `member@example.com`, `newuser@example.com`, and `anotheradmin@example.com`.
    - **Expected Result**: Successful removal for each, accompanied by "Email address successfully removed from allowlist." banner. Only the sole administrator remains in the database.
 
+   # Handoff: Extended Admin Panel - Catalog Management & Read-Only User Visibility (feature/admin-panel-phase-2) - August 21, 2026
+
+   ## What was built
+   - **Global Catalog Management (Workouts & Meals)**:
+   - **Secure Server Actions (`src/app/admin/catalog-actions.ts`)**:
+     - Created strict, Zod-validated, and administrator-gated Server Actions (`createWorkout`, `updateWorkout`, `deleteWorkout`, `createMeal`, `updateMeal`, `deleteMeal`).
+     - Implemented a custom slugification utility with dynamic counter suffixing (e.g. `hellfire-metcon-1`) to automatically resolve title-to-slug collisions when provisioning new catalog items.
+     - Used transactional database safety (`prisma.$transaction`) to handle sub-element mutations (purging old exercises and inserting new ones) and to safely handle dynamic ID slug-updates without disrupting references.
+   - **Interactive Catalog Dashboards (`src/app/admin/workouts` & `src/app/admin/meals`)**:
+     - Built SPA-like catalog managers (`WorkoutsManager.tsx` and `MealsManager.tsx`) that enable administrators to view list entries, trigger creation forms, modify details, or prune obsolete catalog entries.
+     - Designed dynamic React forms (`WorkoutForm.tsx` and `MealForm.tsx`) featuring fully client-managed repeatable sub-forms. Administrators can add/remove exercises (with custom sets, reps, rest periods, and optional notes) or edit lists of ingredients and cooking steps dynamically.
+     - Styled to perfectly match the brand's premium, sharp-cornered "high-voltage brutalist" visual system, complete with macro readouts, difficulty trackers, and active animations.
+   - **Read-Only Operator Intel (Other-User Visibility)**:
+   - **Overview Registry Portal (`src/app/admin/users/page.tsx`)**:
+     - Built a dedicated directory displaying every registered user (derived from Google Sign-In records), listing their email, name, number of active/total wager contracts, initialized metric status, and count of weigh-ins.
+   - **Diagnostic Report Detail Route (`src/app/admin/users/[id]/page.tsx`)**:
+     - Created a dynamic dynamic route to audit individual operators.
+     - Displays detailed metric profiles (streaks, weights, target benchmarks), chronologically ordered weight logs, and detailed wager contracts with corresponding status badges (WON, LOST, ACTIVE).
+     - **Defense in Depth / Audit-Only Constraint**: Gated exclusively with `checkAdmin()`. Form inputs, edit actions, and mutation parameters are completely absent in this directory. Security warning labels enforce the diagnostic-only nature of this view.
+   - **Quick Portal Navigation Deck (`src/app/admin/page.tsx`)**:
+   - Integrated a premium three-column portal deck inside the main `/admin` screen to provide immediate, discoverable entry points into the Workouts Catalog, Meals Catalog, and Operator Intel diagnostic portal.
+
+   ## Visual-Verification Caveat
+   Because the agent operates headlessly without a browser, visual and design integration was modeled entirely on preexisting project Tailwind definitions, `.panel-aggressive`, `.btn-assault`, `.hazard-stripes`, and active layout spacing parameters. Physical brower validation of the forms, cards, and user grids is recommended.
+
+   ## Manual Test Plan (Run before shipping to Staging/Production)
+
+   ### Test Case A: Gated Security Gating (Defense-In-Depth)
+   **Goal**: Verify that non-admin operators cannot access any phase 2 dynamic routes or call their server actions.
+
+   1. **Step A.1: Sign in as Member**:
+    - Authenticate/mock session as a regular user (e.g. `member@example.com` who is not marked as `isAdmin: true` on the allowlist).
+   2. **Step A.2: Direct Route Block Check**:
+    - Manually navigate your browser to the following URLs:
+      - `/admin/workouts`
+      - `/admin/meals`
+      - `/admin/users`
+      - `/admin/users/some-user-id`
+    - **Expected Result**: In every single case, you are immediately redirected back to `/` and no data or layout is exposed.
+   3. **Step A.3: Server Action Abuse Check**:
+    - Attempt to call any Server Action from `catalog-actions.ts` directly (e.g. `deleteMeal`, `createWorkout`) under a non-admin session.
+    - **Expected Result**: The action halts instantly, and you are redirected to `/admin?error=unauthorized`.
+
+   ---
+
+   ### Test Case B: Catalog CRUD & Dynamic Slug Resolution
+   **Goal**: Verify full lifecycle of catalog creation, collision handling, updating, and propagation.
+
+   1. **Step B.1: Sign in as Admin**:
+    - Authenticate/mock session as `admin@example.com` (`isAdmin: true`).
+   2. **Step B.2: Navigate to Workouts Catalog**:
+    - Access `/admin/workouts` and click "+ PROVISION NEW WORKOUT".
+   3. **Step B.3: Provision Workout with Exercises**:
+    - Fill out Title: `Anabolic Conditioning`, Target: `Metcon / Fat loss`, Calories Burn: `600`, duration `30 Mins`, Select intensity `ANARCHIC`, select category `AMRAP`.
+    - Click "+ ADD EXERCISE" twice to provision two exercises. Fill out name, sets, reps, rest for both.
+    - Click "PROVISION WORKOUT".
+    - **Expected Result**: Successfully redirected to list view. Banner "Workout successfully provisioned in catalog." is displayed. `Anabolic Conditioning` is listed, and its ID slug is `anabolic-conditioning`.
+   4. **Step B.4: Trigger ID Slug Collision Resolution**:
+    - Click "+ PROVISION NEW WORKOUT" again.
+    - Fill out the form with the **exact same title**: `Anabolic Conditioning` but different exercises/calories. Click "PROVISION WORKOUT".
+    - **Expected Result**: The new workout is created successfully. Its ID slug automatically resolves to `anabolic-conditioning-1` with no errors, preserving both records cleanly in the database.
+   5. **Step B.5: Verify Public Propagation**:
+    - Navigate to the user-facing training page `/workouts`.
+    - **Expected Result**: Both `Anabolic Conditioning` and its sibling appear in full styling, complete with exercises, calories, and categories.
+   6. **Step B.6: Edit Detail & Delete**:
+    - Go back to `/admin/workouts`, click "EDIT DETAILS" next to `anabolic-conditioning-1`, alter some fields, and click "LOCK IN CHANGES". Verify change is applied.
+    - Click "DELETE" on both. Confirm deletion is applied. Verify they no longer appear on `/workouts`.
+
+   ---
+
+   ### Test Case C: Read-Only User Intel Auditing
+   **Goal**: Verify user profiles are fully audit-ready and completely read-only.
+
+   1. **Step C.1: Access User Directory**:
+    - Go to `/admin`, and click the "Operator Intel" card (or navigate directly to `/admin/users`).
+    - **Expected Result**: Lists all active signed-in operators (including yourself).
+   2. **Step C.2: Click User details**:
+    - Click "VIEW USER INTEL" next to any operator.
+    - **Expected Result**: Detailed diagnostic panel loads showing:
+      - Warning banner informing you of strictly read-only security mode.
+      - Accurate metric profile (streak, start weight, etc.).
+      - Chronological list of weigh-in records.
+      - Complete breakdown of active/historical wager commitments with colored status badges.
+   3. **Step C.3: Verify Read-Only Integrity**:
+    - Audit the entire page.
+    - **Expected Result**: No text-fields, check-boxes, toggle buttons, forms, delete links, or "save" prompts exist anywhere in this template. All information is rendered as static, formatted read-only metrics.
+
 
 
