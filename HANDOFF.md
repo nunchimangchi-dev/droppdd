@@ -359,4 +359,102 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
 - **Note for Reviewer**:
   - Visual appearance was not verified in a browser (no GUI access). Changes were made based on existing theme tokens and project instructions. Human review with a browser is required for final aesthetic validation.
 
+# Handoff: Admin Panel for Managing Sign-in Allowlist (feature/admin-panel) - August 21, 2026
+
+## What was built
+- **Schema Migration (`prisma/schema.prisma` & migrations)**:
+  - Added `isAdmin Boolean @default(false)` to the `AllowedEmail` model.
+  - Generated and executed a real SQLite schema migration `20260822032601_add_is_admin_to_allowed_email` using `prisma migrate dev`.
+  - Regenerated the Prisma Client types to expose the `isAdmin` property.
+- **Upsert-Style Database Seeding (`prisma/seed.ts`)**:
+  - Enhanced the database seed script to read from `process.env.SEED_ADMIN_EMAIL`.
+  - If specified, it upserts the given email into the allowlist and marks them as `isAdmin: true` while preserving any existing entries (zero-disruption approach).
+- **Secure Server Actions (`src/app/admin/actions.ts`)**:
+  - Created a set of Server Actions with strict validation and defense-in-depth security:
+    - `addAllowedEmail`: Validates the entered email with Zod, ensures the user is an authorized admin, checks that the email doesn't already exist, and creates the new operator on the allowlist (with optional admin privileges).
+    - `toggleAdminStatus`: Validates target email, verifies invoking operator's admin status, and toggles target user's `isAdmin` property. Includes an uncompromising safety check to prevent demoting the last administrator.
+    - `removeAllowedEmail`: Validates target email, verifies invoking operator's admin status, and removes the email from the allowlist. Includes an uncompromising safety check to prevent removing the last administrator.
+- **Gated Server-Side UI (`src/app/admin/page.tsx`)**:
+  - Built a secure, server-rendered Admin panel page using React Server Components.
+  - Checks if the user's session is authenticated and looks up their allowlist record. If the user is not found or is not an administrator, they are silently redirected to `/` (complying with standard gated routing design).
+  - Displays high-contrast alert boxes for errors and operations success.
+  - Lists all allowed operators, sorted by registration ID, with dedicated actions to toggle admin privileges or completely revoke allowlist access.
+  - Styled to match the bold, high-contrast, sharp-cornered "high-voltage brutalist" visual system precisely (including `.panel-aggressive`, `.btn-assault`, `.hazard-stripes`, and matching color palettes).
+- **Navbar & Layout Integration (`src/app/layout.tsx` & `src/app/components/Navbar.tsx`)**:
+  - Modified `RootLayout` to import Prisma Client, lookup the `isAdmin` state of the current session user alongside the `auth()` call, and thread the value to the `<Navbar />` component.
+  - Extended `NavbarProps` to accept `isAdmin?: boolean`.
+  - Dynamically appends the "ADMIN" tab (utilizing a high-voltage, check-shield SVG icon) to the mobile bottom bar and desktop sidebar menu `navItems` if and only if `isAdmin` is `true`.
+
+## Visual-Verification Caveat
+Because the agent does not have access to a browser, visual/aesthetic correctness could not be verified in-browser. The UI was built strictly around existing Tailwind tokens, `.panel-aggressive`, `.btn-assault`, `.hazard-stripes`, and matching brand-color CSS variables specified in `globals.css` and `Navbar.tsx`. Manual visual review is highly recommended.
+
+## Manual Test Plan (Run before shipping to Staging/Production)
+
+### Preparation
+1. **Initialize a Fresh Local Environment**:
+   - Run `npx prisma migrate reset --force` to start from a clean state.
+   - Run the seed command to provision two test users:
+     `ALLOWED_EMAILS="member@example.com" SEED_ADMIN_EMAIL="admin@example.com" npx prisma db seed`
+   - This sets up:
+     - `admin@example.com` (Member of allowlist, `isAdmin: true`)
+     - `member@example.com` (Member of allowlist, `isAdmin: false`)
+
+---
+
+### Test Case A: Access Gating and Redirection
+**Goal**: Verify that non-admin operators are completely restricted from accessing the admin page or invoking its server actions.
+
+1. **Step A.1: Sign in as Member**:
+   - Mock/simulate logging in as `member@example.com`.
+2. **Step A.2: Verify Navigation Visibility**:
+   - Confirm that the "ADMIN" menu item does **not** appear in either the desktop sidebar or the mobile bottom navigation bar.
+3. **Step A.3: Direct Route Access Gating**:
+   - Attempt to navigate directly to `/admin` in your browser.
+   - **Expected Result**: You are immediately redirected back to `/` and no Admin UI is rendered.
+4. **Step A.4: direct Server Action Abuse Gating**:
+   - Simulate a direct server action post request to `addAllowedEmail`, `toggleAdminStatus`, or `removeAllowedEmail` as `member@example.com` (e.g. using curl or manually invoking the action on the client).
+   - **Expected Result**: The action is rejected, and you are redirected to `/admin?error=unauthorized`.
+
+---
+
+### Test Case B: Admin Management Actions (Full CRUD)
+**Goal**: Verify an administrator can add, toggle, and remove allowlist operators.
+
+1. **Step B.1: Sign in as Admin**:
+   - Mock/simulate logging in as `admin@example.com`.
+2. **Step B.2: Verify Navigation Visibility**:
+   - Confirm that the "ADMIN" menu item appears with the shield icon.
+3. **Step B.3: Access Route**:
+   - Click "ADMIN" or go directly to `/admin`.
+   - **Expected Result**: The page renders cleanly and lists `admin@example.com` (labeled as `ADMIN` with a `YOU` badge) and `member@example.com` (labeled as `MEMBER`).
+4. **Step B.4: Add Operator (New Member)**:
+   - In the "Provision New Operator" form, type `newuser@example.com` and leave "Grant Administrator Privileges" unchecked. Click "Authorize Operator".
+   - **Expected Result**: The page reloads with a green banner "Email address successfully added to allowlist." and `newuser@example.com` is listed at the bottom as a `MEMBER`.
+5. **Step B.5: Add Operator (New Admin)**:
+   - Type `anotheradmin@example.com`, check "Grant Administrator Privileges", and click "Authorize Operator".
+   - **Expected Result**: The page reloads showing `anotheradmin@example.com` as an `ADMIN`.
+6. **Step B.6: Duplicate Prevention**:
+   - Try to add `newuser@example.com` again.
+   - **Expected Result**: The page reloads showing a red banner "This email address is already on the allowlist." and the operation is rejected.
+
+---
+
+### Test Case C: Lockout Prevention / Last Admin Invariant Check
+**Goal**: Ensure it is absolutely impossible to demote or remove the last administrator (preventing total lockouts).
+
+1. **Step C.1: Demote the Secondary Admin**:
+   - Click the "ADMIN" button next to `anotheradmin@example.com` to toggle their status.
+   - **Expected Result**: Success banner "Admin status successfully updated." appears and `anotheradmin@example.com` is now a `MEMBER`.
+   - **Status Check**: Only `admin@example.com` remains as an administrator.
+2. **Step C.2: Try to Demote the Last Admin**:
+   - Click the "ADMIN" button next to `admin@example.com` (labeled as `YOU`) to demote yourself.
+   - **Expected Result**: Action is blocked. Red banner "Cannot remove or demote the last administrator. At least one admin is required." is displayed. `admin@example.com` remains `ADMIN`.
+3. **Step C.3: Try to Revoke Access for the Last Admin**:
+   - Click "REVOKE ACCESS" next to `admin@example.com`.
+   - **Expected Result**: Action is blocked. Red banner "Cannot remove or demote the last administrator. At least one admin is required." is displayed. `admin@example.com` is NOT removed.
+4. **Step C.4: Delete Other Users**:
+   - Click "REVOKE ACCESS" next to `member@example.com`, `newuser@example.com`, and `anotheradmin@example.com`.
+   - **Expected Result**: Successful removal for each, accompanied by "Email address successfully removed from allowlist." banner. Only the sole administrator remains in the database.
+
+
 

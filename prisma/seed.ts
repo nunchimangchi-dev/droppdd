@@ -102,6 +102,16 @@ async function main() {
       create: { email },
     });
   }
+
+  // Seed the admin email if specified (upsert-style)
+  const seedAdminEmail = process.env.SEED_ADMIN_EMAIL;
+  if (seedAdminEmail) {
+    await prisma.allowedEmail.upsert({
+      where: { email: seedAdminEmail },
+      update: { isAdmin: true },
+      create: { email: seedAdminEmail, isAdmin: true },
+    });
+  }
 }
 
 main()
