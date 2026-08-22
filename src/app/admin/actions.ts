@@ -6,7 +6,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-async function checkAdmin() {
+export async function checkAdmin() {
   const session = await auth();
   if (!session?.user?.email) {
     return false;

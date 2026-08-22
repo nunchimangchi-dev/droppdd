@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -77,6 +78,51 @@ export default async function AdminPage({
           <span>{SUCCESS_MESSAGES[success] ?? "Operation completed successfully."}</span>
         </div>
       )}
+
+      {/* Admin Quick Portal Hub */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link href="/admin/workouts" className="panel-aggressive hover:border-brand-orange/60 group block">
+          <div className="flex justify-between items-start">
+            <span className="text-[9px] font-black tracking-widest bg-brand-orange/15 border border-brand-orange/20 text-brand-orange px-2 py-0.5 uppercase">
+              CATALOG
+            </span>
+          </div>
+          <h3 className="text-lg font-black italic text-brand-text group-hover:text-brand-orange transition-colors uppercase mt-4">
+            WORKOUTS
+          </h3>
+          <p className="text-xs text-brand-text-muted mt-1 uppercase font-bold leading-normal">
+            PROVISION, UPDATE, AND PRUNE GLOBAL TRAINING RUNS.
+          </p>
+        </Link>
+
+        <Link href="/admin/meals" className="panel-aggressive hover:border-brand-orange/60 group block">
+          <div className="flex justify-between items-start">
+            <span className="text-[9px] font-black tracking-widest bg-brand-orange/15 border border-brand-orange/20 text-brand-orange px-2 py-0.5 uppercase">
+              CATALOG
+            </span>
+          </div>
+          <h3 className="text-lg font-black italic text-brand-text group-hover:text-brand-orange transition-colors uppercase mt-4">
+            MEALS
+          </h3>
+          <p className="text-xs text-brand-text-muted mt-1 uppercase font-bold leading-normal">
+            PROVISION, UPDATE, AND PRUNE GLOBAL PROTOCOL FEASTS.
+          </p>
+        </Link>
+
+        <Link href="/admin/users" className="panel-aggressive hover:border-brand-orange/60 group block">
+          <div className="flex justify-between items-start">
+            <span className="text-[9px] font-black tracking-widest bg-brand-orange/15 border border-brand-orange/20 text-brand-orange px-2 py-0.5 uppercase">
+              SECURITY
+            </span>
+          </div>
+          <h3 className="text-lg font-black italic text-brand-text group-hover:text-brand-orange transition-colors uppercase mt-4">
+            OPERATOR INTEL
+          </h3>
+          <p className="text-xs text-brand-text-muted mt-1 uppercase font-bold leading-normal">
+            AUDIT AND TROUBLESHOOT REGISTERED OPERATOR DISCIPLINE LOGS.
+          </p>
+        </Link>
+      </div>
 
       {/* Operator creation form */}
       <div className="panel-aggressive relative">
