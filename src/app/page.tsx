@@ -1,15 +1,29 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { mockOMAD } from "@/lib/mock-data";
 
 export default async function Dashboard() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  const userId = session.user.id;
+
   const wod = await prisma.workout.findFirst({
     include: { exercises: true },
   });
   const nextMeal = await prisma.meal.findFirst();
-  const progress = await prisma.progress.findFirst();
+  const progress = await prisma.progress.findFirst({
+    where: { userId },
+  });
 
-  if (!wod || !nextMeal || !progress) {
+  if (!progress) {
+    redirect("/onboarding");
+  }
+
+  if (!wod || !nextMeal) {
     return <div className="text-brand-text font-black text-center py-16 uppercase">Data not found</div>;
   }
 

@@ -543,5 +543,109 @@ Because the agent does not have access to a browser, visual/aesthetic correctnes
     - Audit the entire page.
     - **Expected Result**: No text-fields, check-boxes, toggle buttons, forms, delete links, or "save" prompts exist anywhere in this template. All information is rendered as static, formatted read-only metrics.
 
+# Handoff: Real Multi-User Isolation, Onboarding Flow & Beta Slot Tracking (feature/multiuser-beta) - August 25, 2026
+
+## What was built
+- **Multi-User Data-Isolation Bug Fix (`src/app/page.tsx` & `src/app/progress/page.tsx`)**:
+  - Resolved a severe data-leak bug in `src/app/page.tsx` (the main dashboard) where it queried `prisma.progress.findFirst()` without any `where: { userId }` clause, leaking the first progress row in the database to any logged-in user.
+  - Implemented the same strict session-gating and per-user querying found on `/progress` and `/wagers`: dashboard now redirects unauthenticated users to `/signin` and scopes the progress lookup directly to `session.user.id`.
+  - Refactored `/` and `/progress` to seamlessly redirect users to `/onboarding` if they do not yet have progress data, ensuring no user ever faces a "Data not found" or "No progress data found" dead-end wall.
+- **Dynamic Streak Propagation (`src/app/layout.tsx` & `src/app/components/Navbar.tsx`)**:
+  - Replaced the hardcoded `"12 DAYS STRONG"` and `"🔥 12 DAYS"` strings in both the desktop sidebar and the mobile header.
+  - Added user-session lookup of `currentStreak` inside the server-rendered `RootLayout` and passed this dynamic state through to the `<Navbar>` component and the mobile header component.
+- **Self-Service Onboarding Flow (`src/app/onboarding/`)**:
+  - Built a completely new, gated self-service onboarding route at `/onboarding/page.tsx` with high-contrast, brutalist design matching the app's premium aesthetic.
+  - Created a robust Server Action at `src/app/onboarding/actions.ts` utilizing Zod schema validation to confirm input telemetry (`startWeight`, `currentWeight`, `targetWeight`) are valid positive numbers.
+  - The Server Action strictly verifies the authenticated session, guarantees no other user's records are accessed, creates the initial `Progress` row (with streaks starting at 0), and inserts a chronological baseline `WeightRecord` using the formatted current date (e.g. `"Aug 25"`), allowing the weight trend visualizer to function immediately.
+- **Beta Slot Capacity Counter (`src/app/admin/page.tsx`)**:
+  - Integrated a slot utilization tracker inside the admin panel that counts how many non-admin `AllowedEmail` rows are currently provisioned out of 10.
+  - Displays a high-contrast badge in the provisioning card showing `[Used] / 10 BETA SLOTS USED`.
+  - Implemented a prominent, non-blocking warning banner that flashes in the provision panel if the slot limit is reached or exceeded (e.g. `10 / 10`), warning administrators before they override the capacity limit.
+
+## Visual-Verification Caveat
+Because the agent operates headlessly in Auto-Edit mode, visual/aesthetic rendering could not be checked live in a browser. The onboarding UI and slot tracker were designed strictly utilizing the unified `.panel-aggressive`, `.btn-assault`, `.hazard-stripes`, and matching brand tokens defined in `globals.css`. Manual browser-level visual verification is highly recommended.
+
+## Manual Test Plan (Run before shipping to Staging/Production)
+
+### Preparation
+1. **Initialize a Fresh Local Database State**:
+   - Run `npx prisma migrate reset --force` to clear all tables.
+   - Run the seed command to populate workouts, meals, and register an admin allowlist email:
+     `SEED_ADMIN_EMAIL="admin@example.com" npx prisma db seed`
+   - Log in once as `admin@example.com` to create their user account record.
+   - Using Prisma Studio (`npx prisma studio`), verify:
+     - `User` table contains 1 row (`admin@example.com`'s account).
+     - `Progress` table is completely empty.
+
+---
+
+### Test Case A: Gated Onboarding & Self-Service Telemetry Initialization
+**Goal**: Verify a newly registered operator without progress data is forced to onboard and cannot view the empty dashboard.
+
+1. **Step A.1: Access Main Dashboard**:
+   - Navigate to `/` as `admin@example.com`.
+   - **Expected Result**: You are automatically redirected to `/onboarding`. The dashboard is not visible.
+2. **Step A.2: Access Progress Page**:
+   - Try to navigate directly to `/progress`.
+   - **Expected Result**: You are automatically redirected to `/onboarding`.
+3. **Step A.3: Submit Invalid Telemetry**:
+   - In the onboarding form, enter `-200` for Starting Mass or leave values empty. Click "ENGAGE PROTOCOL".
+   - **Expected Result**: Form inputs fail validation (Zod blocks negative numbers/empty fields). You are redirected back to `/onboarding?error=invalid-values` displaying a red warning banner.
+4. **Step A.4: Submit Valid Telemetry**:
+   - Fill out:
+     - Starting Mass: `205.0`
+     - Current Mass: `198.5`
+     - Target Mass: `185.0`
+   - Click "ENGAGE PROTOCOL".
+   - **Expected Result**: The Server Action creates:
+     - 1 `Progress` row with `currentStreak: 0`, `bestStreak: 0`.
+     - 1 `WeightRecord` row with `weight: 198.5` and `date: "Aug 25"`.
+   - You are redirected cleanly to the main dashboard `/`.
+5. **Step A.5: Verify Dashboard Recovery**:
+   - Hitting `/` and `/progress` now renders completely and correctly without redirecting.
+   - The desktop sidebar and mobile header display `0 DAYS STRONG` and `🔥 0 DAYS` respectively (since streak started at 0).
+   - The weight trend widget on `/progress` displays a single entry for `"Aug 25"` at `198.5 LBS`.
+
+---
+
+### Test Case B: Strict Multi-User Data Isolation
+**Goal**: Verify that distinct users see only their own scoped progress and cannot view each other's metrics.
+
+1. **Step B.1: Create Second User**:
+   - In the admin panel `/admin`, provision a new operator `member@example.com`.
+   - Log in as `member@example.com` to create their account.
+2. **Step B.2: Onboard Second User**:
+   - Hitting `/` redirects `member@example.com` to `/onboarding`.
+   - Fill out their telemetry:
+     - Starting Mass: `160.0`
+     - Current Mass: `155.0`
+     - Target Mass: `140.0`
+   - Click "ENGAGE PROTOCOL".
+3. **Step B.3: Verify Scoping on Dashboard (`/`)**:
+   - As `member@example.com` on `/`:
+     - **Expected Result**: Current Mass displays `155 LBS`, and target displays `140 LBS`. Total shed displays `5.0 LBS`.
+   - Log back in as `admin@example.com` on `/`:
+     - **Expected Result**: Current Mass displays `198.5 LBS`, and target displays `185.0 LBS`. Total shed displays `6.5 LBS`.
+     - No data leaks from `member@example.com`.
+
+---
+
+### Test Case C: Beta Slot Counter & Capacity Warnings
+**Goal**: Verify that the beta slot ratio computes correctly and flags warning status upon exceeding capacity.
+
+1. **Step C.1: Check Initial Capacity Status**:
+   - Navigate to `/admin` as `admin@example.com`.
+   - Under "PROVISION NEW OPERATOR", observe the slot counter badge.
+   - **Expected Result**: Badge displays `1 / 10 BETA SLOTS USED` (only `member@example.com` is a non-admin allowlist member; `admin@example.com` does not count since they are an administrator). No warning banner is visible.
+2. **Step C.2: Fill Allowlist up to Capacity Limit**:
+   - Add 9 more member emails (e.g. `m1@test.com` through `m9@test.com`) with "Grant Administrator Privileges" unchecked.
+   - **Expected Result**: The slot counter badge dynamically updates to `10 / 10 BETA SLOTS USED`.
+   - A high-visibility warning banner appears within the card: `"BETA CAPACITY WARNING: YOU HAVE REACHED THE 10-SLOT LIMIT. ADDING MORE SHIFTS THE APPLICATION TO AN OVER-CAPACITY STATE."`
+3. **Step C.3: Exceed Capacity Limit**:
+   - Add one more non-admin email `extra@test.com`.
+   - **Expected Result**: The action is not hard-blocked. `extra@test.com` is successfully added.
+   - The slot counter badge updates to `11 / 10 BETA SLOTS USED`, and the warning banner remains active.
+
+
 
 

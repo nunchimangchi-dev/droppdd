@@ -24,11 +24,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const session = await auth();
 
   let isAdmin = false;
+  let currentStreak = 0;
   if (session?.user?.email) {
     const allowed = await prisma.allowedEmail.findUnique({
       where: { email: session.user.email },
     });
     isAdmin = allowed?.isAdmin === true;
+  }
+  if (session?.user?.id) {
+    const progress = await prisma.progress.findFirst({
+      where: { userId: session.user.id },
+    });
+    if (progress) {
+      currentStreak = progress.currentStreak;
+    }
   }
 
   const signOutAction = async () => {
@@ -42,7 +51,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
       <body className="min-h-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans flex flex-col md:flex-row">
-        <Navbar userEmail={session?.user?.email ?? null} signOutAction={signOutAction} isAdmin={isAdmin} />
+        <Navbar userEmail={session?.user?.email ?? null} signOutAction={signOutAction} isAdmin={isAdmin} currentStreak={currentStreak} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Mobile Header */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-900 bg-zinc-950 sticky top-0 z-40 shadow-xl">
@@ -57,7 +66,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-[10px] bg-orange-500/10 text-orange-500 font-black px-2.5 py-1.5 rounded-sm border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)] italic">
-                🔥 12 DAYS
+                🔥 {currentStreak} {currentStreak === 1 ? "DAY" : "DAYS"}
               </div>
               
               {session?.user && (

@@ -11,14 +11,15 @@ export default async function ProgressPage() {
   const progress = await prisma.progress.findFirst({
     where: { userId: session.user.id },
   });
+
+  if (!progress) {
+    redirect("/onboarding");
+  }
+
   const weightHistory = await prisma.weightRecord.findMany({
     where: { userId: session.user.id },
     orderBy: { id: 'asc' },
   });
-
-  if (!progress) {
-    return <div className="text-brand-text font-black text-center py-16 uppercase">No progress data found.</div>;
-  }
 
   return (
     <div className="space-y-8 animate-fade-in">

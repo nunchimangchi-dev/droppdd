@@ -46,6 +46,8 @@ export default async function AdminPage({
     orderBy: { id: "asc" },
   });
 
+  const betaSlotsUsed = allowedEmails.filter((e) => !e.isAdmin).length;
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Aggressive Section Header */}
@@ -127,10 +129,27 @@ export default async function AdminPage({
       {/* Operator creation form */}
       <div className="panel-aggressive relative">
         <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
-        <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-6 flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-brand-orange block" />
-          PROVISION NEW OPERATOR
-        </h2>
+        
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+          <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-brand-orange block" />
+            PROVISION NEW OPERATOR
+          </h2>
+          <span className={`text-xs font-black tracking-widest px-3 py-1.5 border leading-none ${
+            betaSlotsUsed >= 10
+              ? "bg-brand-warning/10 text-brand-warning border-brand-warning/20 animate-pulse"
+              : "bg-brand-orange/10 text-brand-orange border-brand-orange/20"
+          }`}>
+            {betaSlotsUsed} / 10 BETA SLOTS USED
+          </span>
+        </div>
+
+        {betaSlotsUsed >= 10 && (
+          <div className="bg-brand-warning/10 border-2 border-brand-warning text-brand-warning text-xs font-black p-4 rounded-none uppercase tracking-wider flex items-center gap-3 mb-5">
+            <span className="text-xl">⚠️</span>
+            <span>BETA CAPACITY WARNING: YOU HAVE REACHED THE 10-SLOT LIMIT. ADDING MORE SHIFTS THE APPLICATION TO AN OVER-CAPACITY STATE.</span>
+          </div>
+        )}
 
         <form action={addAllowedEmail} className="space-y-5">
           <div>

@@ -13,9 +13,10 @@ interface NavbarProps {
   userEmail: string | null;
   signOutAction: () => Promise<void>;
   isAdmin?: boolean;
+  currentStreak?: number;
 }
 
-export default function Navbar({ userEmail, signOutAction, isAdmin = false }: NavbarProps) {
+export default function Navbar({ userEmail, signOutAction, isAdmin = false, currentStreak = 0 }: NavbarProps) {
   const pathname = usePathname();
 
   // Helper to determine if path is active (exact match, or sub-path match for nested pages)
@@ -201,7 +202,7 @@ export default function Navbar({ userEmail, signOutAction, isAdmin = false }: Na
             </div>
             <div>
               <p className="text-[10px] text-brand-text-muted font-extrabold tracking-[0.15em] uppercase leading-none mb-1">STREAK</p>
-              <p className="text-sm font-black text-brand-text leading-none italic">12 DAYS <span className="text-brand-orange">STRONG</span></p>
+              <p className="text-sm font-black text-brand-text leading-none italic">{currentStreak} {currentStreak === 1 ? "DAY" : "DAYS"} <span className="text-brand-orange">STRONG</span></p>
             </div>
           </div>
 
