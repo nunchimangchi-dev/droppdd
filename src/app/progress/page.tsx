@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { computeGoalPercent } from "@/lib/progress-percent";
 
 export default async function ProgressPage() {
   const session = await auth();
@@ -70,10 +71,8 @@ export default async function ProgressPage() {
         
         <div className="space-y-4">
           {weightHistory.map((record) => {
-            const percentage = ( (progress.startWeight - record.weight) / (progress.startWeight - progress.targetWeight) ) * 105;
-            // Bound percentage between 5 and 100
-            const boundedPercent = Math.min(Math.max(percentage, 5), 100);
-            
+            const boundedPercent = computeGoalPercent(progress.startWeight, record.weight, progress.targetWeight);
+
             return (
               <div key={record.date} className="flex items-center gap-4">
                 <span className="text-xs font-black text-brand-text-muted w-16 uppercase leading-none">{record.date}</span>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { computeGoalPercent } from "@/lib/progress-percent";
 
 // Relative metrics only - % toward goal, streak. Never raw weight or other
 // absolute numbers. Privacy decision made explicitly with the maintainer,
@@ -48,16 +49,10 @@ export default async function LeaderboardPage() {
       const p = u.progress[0];
       if (!p || !u.username) return null;
 
-      // Exact same formula as /progress - reused, not reimplemented, so it
-      // can't drift from the per-user version.
-      const percentage =
-        ((p.startWeight - p.currentWeight) / (p.startWeight - p.targetWeight)) * 105;
-      const boundedPercent = Math.min(Math.max(percentage, 5), 100);
-
       return {
         userId: u.id,
         username: u.username,
-        percentage: boundedPercent,
+        percentage: computeGoalPercent(p.startWeight, p.currentWeight, p.targetWeight),
         streak: p.currentStreak,
       };
     })

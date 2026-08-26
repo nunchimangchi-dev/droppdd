@@ -1272,3 +1272,47 @@ the instant the last set is checked, confirm the "N sets left" hint
 count is accurate.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Profile/leaderboard audit: editable details + NaN fix
+
+Persona walkthrough of `/profile` and `/leaderboard`. Two real findings,
+both fixed. No schema changes - `Progress.age`/`heightInches`/
+`mealPreference` already existed from the earlier onboarding pass.
+
+### What was built
+- **`/profile` can now edit age, height, and meal preference.**
+  Previously these were captured once at onboarding with zero edit path
+  anywhere in the app afterward - confirmed by checking
+  `onboarding/actions.ts`, which explicitly blocks re-submission
+  (`if (existing) redirect("/")`). This mattered specifically because
+  `mealPreference` now actively steers AI meal generation - someone who
+  picked "No Preference" at signup and later wants to go vegetarian was
+  stuck permanently. New `updateProfileDetails` action + form, same
+  lbs/kg-style unit toggle pattern as onboarding (height converts to
+  canonical inches server-side).
+- **Fixed a real `NaN%` bug**: a "maintain weight" goal
+  (`targetWeight === startWeight`, which onboarding's Zod schema never
+  prevented) divided by zero in the percentage formula, and `NaN`
+  propagated straight through the bounding logic - `/progress`'s bar
+  chart and `/leaderboard`'s standing would both render "NaN% TOWARD
+  GOAL" for that user. Extracted the formula into a single shared
+  `src/lib/progress-percent.ts` (`computeGoalPercent`), guarded so a
+  maintenance goal (zero distance to travel) returns 100 instead of
+  dividing by zero. This also closes a real drift risk that already
+  existed: `/leaderboard`'s own code comment claimed to "reuse the exact
+  formula" from `/progress`, but it was actually a hand-copy-pasted
+  duplicate, not an import - the two could have silently diverged the
+  next time either one was edited. Now there's exactly one
+  implementation.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/profile`, `/leaderboard`, `/progress` all correctly `307`
+to sign-in, zero compile/runtime errors in the dev server log). Cover
+before wider use:
+- Update age/height/meal preference on `/profile`, confirm it persists
+  and that a subsequent AI meal generation respects the new preference.
+- Onboard (or edit an existing user's `Progress` row) with
+  `targetWeight === startWeight` and confirm `/progress` and
+  `/leaderboard` both show 100%, not `NaN%`.
+- `npm run build` and `npm run lint` both pass (confirmed).
+

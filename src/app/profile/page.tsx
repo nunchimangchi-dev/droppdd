@@ -1,17 +1,24 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { updateUsername } from "./actions";
+import { updateUsername, updateProfileDetails } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "missing": "Username is required.",
   "invalid-format": "3-20 characters, alphanumeric & underscores only (no spaces).",
   "taken": "That username is already taken. Choose another.",
+  "invalid-details": "Check your entries - age and height must be valid.",
 };
 
 const SUCCESS_MESSAGES: Record<string, string> = {
   "true": "Callsign updated successfully.",
+  "details": "Profile details updated successfully.",
 };
+
+const inputClass =
+  "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors";
+const selectClass =
+  "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-3 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer";
 
 export default async function ProfilePage({
   searchParams,
@@ -40,6 +47,11 @@ export default async function ProfilePage({
   if (!user) {
     redirect("/signin");
   }
+
+  const progress = await prisma.progress.findFirst({
+    where: { userId },
+    select: { age: true, heightInches: true, mealPreference: true },
+  });
 
   const challengesReceived = await prisma.wager.findMany({
     where: { challengedUserId: userId },
@@ -132,6 +144,83 @@ export default async function ProfilePage({
           </p>
         )}
       </div>
+
+      {/* Physical Details Form */}
+      {progress && (
+        <div className="panel-aggressive relative">
+          <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
+          <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase mb-6 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-brand-orange block" />
+            UPDATE PHYSICAL DETAILS
+          </h2>
+
+          <form action={updateProfileDetails} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block label-micro mb-1.5">AGE</label>
+                <input
+                  type="number"
+                  step="1"
+                  name="age"
+                  required
+                  min={13}
+                  max={120}
+                  defaultValue={progress.age ?? undefined}
+                  placeholder="e.g. 32"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block label-micro mb-1.5">HEIGHT</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="height"
+                  required
+                  defaultValue={progress.heightInches ?? undefined}
+                  placeholder="e.g. 70"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block label-micro mb-1.5">HEIGHT UNIT</label>
+              <select name="heightUnit" required defaultValue="IN" className={selectClass}>
+                <option value="IN">Inches (in)</option>
+                <option value="CM">Centimeters (cm)</option>
+              </select>
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                Height above is shown in inches (how it&apos;s stored) - switch to CM if you&apos;d
+                rather enter it that way.
+              </p>
+            </div>
+
+            <div>
+              <label className="block label-micro mb-1.5">MEAL PREFERENCE</label>
+              <select
+                name="mealPreference"
+                required
+                defaultValue={progress.mealPreference ?? "NO_PREFERENCE"}
+                className={selectClass}
+              >
+                <option value="NO_PREFERENCE">No preference</option>
+                <option value="CARNIVORE">Carnivore</option>
+                <option value="VEGETARIAN">Vegetarian</option>
+              </select>
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                Actively constrains AI-generated meal suggestions.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button type="submit" className="btn-assault w-full">
+                <span>UPDATE DETAILS</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Change Username Form */}
       <div className="panel-aggressive relative">
