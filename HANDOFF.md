@@ -1316,3 +1316,35 @@ before wider use:
   `/leaderboard` both show 100%, not `NaN%`.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Admin panel audit: weigh-in date bug
+
+First finding from a persona/purpose-driven audit of `/admin` (allowlist
+management, catalog CRUD, and a deliberately read-only per-user
+"troubleshooting" view - that read-only design is good and was kept
+as-is, not loosened). A second, larger finding from that same audit - no
+tooling exists to actually fulfill the account-deletion/data-export
+promise made in the Privacy Policy shipped earlier tonight - is a design
+question, not a quick fix, and is being scoped separately before
+building anything.
+
+### What was built
+- **`/admin/users/[id]` showed every weigh-in as the year 2001.**
+  Confirmed directly, not assumed: `new Date("Aug 25").toLocaleDateString()`
+  evaluates to `8/25/2001` in Node - the page was rendering
+  `new Date(rec.date)` against the old cosmetic display string (no year),
+  not the real `recordedAt` timestamp added when the check-in feature was
+  built. The query's `orderBy: { date: "desc" }` was also sorting
+  alphabetically on that string rather than chronologically. Direct
+  regression from the check-in work - this consumer wasn't checked at the
+  time. Both the query and the render now use `recordedAt`. Grepped the
+  rest of the codebase for the same pattern - no other instances.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/admin/users/[id]` correctly `307`s to sign-in, zero
+compile/runtime errors in the dev server log). Cover before wider use:
+as an admin, view a user with multiple weigh-ins spanning different
+months and confirm both the displayed year is correct and the ordering
+is truly chronological.
+- `npm run build` and `npm run lint` both pass (confirmed).
+

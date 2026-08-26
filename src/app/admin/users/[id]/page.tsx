@@ -30,7 +30,7 @@ export default async function AdminUserDetailPage(props: {
     where: { id },
     include: {
       wagers: { orderBy: { createdAt: "desc" } },
-      weightRecords: { orderBy: { date: "desc" } },
+      weightRecords: { orderBy: { recordedAt: "desc" } },
       progress: true,
     },
   });
@@ -198,7 +198,7 @@ export default async function AdminUserDetailPage(props: {
             <div className="bg-brand-card border border-brand-border divide-y divide-brand-border max-h-[480px] overflow-y-auto">
               {user.weightRecords.map((rec) => (
                 <div key={rec.id} className="p-3 flex justify-between items-center text-xs font-bold uppercase">
-                  <span className="text-brand-text-muted tracking-wider">{new Date(rec.date).toLocaleDateString()}</span>
+                  <span className="text-brand-text-muted tracking-wider">{rec.recordedAt.toLocaleDateString()}</span>
                   <span className="text-brand-text font-black text-sm italic">{rec.weight} LBS</span>
                 </div>
               ))}
