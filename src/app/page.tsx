@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { dayOfYearOffset } from "@/lib/daily-rotation";
 
 export default async function Dashboard() {
   const session = await auth();
@@ -16,10 +17,20 @@ export default async function Dashboard() {
   }
   const userId = session.user.id;
 
+  // Rotates daily instead of always showing the same fixed catalog row -
+  // same pick for every user on a given day, deterministic, no new
+  // schema/tracking needed.
+  const workoutCount = await prisma.workout.count();
+  const mealCount = await prisma.meal.count();
   const wod = await prisma.workout.findFirst({
+    orderBy: { id: "asc" },
+    skip: dayOfYearOffset(workoutCount),
     include: { exercises: true },
   });
-  const nextMeal = await prisma.meal.findFirst();
+  const nextMeal = await prisma.meal.findFirst({
+    orderBy: { id: "asc" },
+    skip: dayOfYearOffset(mealCount),
+  });
   const progress = await prisma.progress.findFirst({
     where: { userId },
   });

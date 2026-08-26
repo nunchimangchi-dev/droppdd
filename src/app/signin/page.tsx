@@ -16,10 +16,10 @@ export default function SignInPage() {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-orange to-transparent opacity-50" />
       <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-orange to-transparent opacity-50" />
 
-      <div className="relative w-full max-w-md px-6">
+      <div className="relative w-full max-w-lg px-6">
         {/* Shadow/Glow effect */}
         <div className="absolute -inset-1 bg-brand-orange/10 blur-2xl rounded-full pointer-events-none" />
-        
+
         <div className="relative bg-brand-card border-2 border-brand-border p-10 text-center space-y-8 shadow-[20px_20px_0px_0px_rgba(0,0,0,1),21px_21px_0px_0px_rgba(34,34,38,1)]">
           <div className="space-y-2">
             <span className="font-black tracking-[0.25em] text-5xl text-brand-orange italic block transform -skew-x-6">
@@ -32,6 +32,26 @@ export default function SignInPage() {
               </span>
               <span className="h-[1px] w-8 bg-brand-border" />
             </div>
+          </div>
+
+          <p className="text-xs text-brand-text-muted font-bold uppercase tracking-wide leading-relaxed max-w-sm mx-auto">
+            A small, invite-only beta for keto/OMAD training: guided workouts,
+            AI-generated meal plans, weight &amp; streak tracking, and
+            accountability wagers against yourself or a friend.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 text-left max-w-sm mx-auto">
+            {[
+              ["WORKOUTS", "Guided keto/OMAD training programs"],
+              ["AI MEALS", "Pantry or macro-driven recipe generation"],
+              ["WAGERS", "Solo or peer accountability, honor system"],
+              ["LEADERBOARD", "Relative progress only, never raw numbers"],
+            ].map(([label, desc]) => (
+              <div key={label} className="border border-brand-border p-3">
+                <p className="text-[9px] font-black text-brand-orange uppercase tracking-wider">{label}</p>
+                <p className="text-[9px] text-brand-text-muted font-bold uppercase tracking-wide mt-1 leading-tight">{desc}</p>
+              </div>
+            ))}
           </div>
 
           <div className="space-y-4">

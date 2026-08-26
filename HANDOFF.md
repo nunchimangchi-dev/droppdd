@@ -978,3 +978,43 @@ compile/runtime errors in the dev server log). Cover before wider use:
   generated SQL) - no table rebuild, no risk to existing rows.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Landing pitch + daily catalog rotation
+
+Second follow-through pass on the onboarding-UX audit backlog. No schema
+changes this time.
+
+### What was built
+- **`/signin` now pitches the app before asking for OAuth**: a short
+  description plus a 4-item feature grid (Workouts, AI Meals, Wagers,
+  Leaderboard) between the branding and the sign-in button. Previously
+  `/signin` asked for a Google OAuth grant with zero explanation of what
+  droppdd even is.
+- **`new src/lib/daily-rotation.ts`**: `dayOfYearOffset(count, date)` -
+  a pure, deterministic function (same result for every user on a given
+  calendar day, rotates to the next catalog row tomorrow). No new schema
+  or tracking table needed.
+- **Dashboard's "Today's WOD" and "upcoming meal" now actually rotate**:
+  previously `prisma.workout.findFirst()` / `prisma.meal.findFirst()`
+  with no filter returned the exact same row for every user, every day,
+  despite the "TODAY'S WOD" framing. Now uses `count()` +
+  `dayOfYearOffset()` + `findFirst({ orderBy: { id: "asc" }, skip })` to
+  pick a real daily rotation across the existing catalog (4 workouts, 3
+  meals today).
+
+### Explicitly out of scope for this pass
+- Cloudflare Access allowlist and the pre-onboarding "look around" gating
+  change - both previously deferred by the maintainer, still deferred.
+- A dedicated marketing/landing page separate from `/signin` - the pitch
+  was added to `/signin` itself rather than building new page
+  architecture, matching the actual scope of the finding.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/signin` renders `200`, `/` correctly `307`s to sign-in,
+zero compile/runtime errors in the dev server log). Cover before wider
+use: confirm the WOD/meal picks actually differ across two different
+calendar dates (can't test without either mocking the date or waiting a
+day - `dayOfYearOffset` itself is a pure function, straightforward to
+unit test if that becomes worth doing). `npm run build` and `npm run
+lint` both pass (confirmed).
+
