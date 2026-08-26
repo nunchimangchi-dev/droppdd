@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { AiMealPlanner } from "./AiMealPlanner";
 
 export default async function MealsPage() {
   const meals = await prisma.meal.findMany();
@@ -108,96 +109,13 @@ export default async function MealsPage() {
           </div>
         </div>
 
-        {/* AI MEAL PLANNING - COMING SOON SECTION */}
+        {/* AI MEAL PLANNING */}
         <div className="space-y-6">
           <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase">
             AI TACTICAL NUTRITION:
           </h2>
 
-          <div className="panel-aggressive border-dashed space-y-6">
-            {/* Background accent */}
-            <div className="absolute -right-16 -bottom-16 w-48 h-48 rounded-full bg-brand-orange/5 blur-3xl pointer-events-none" />
-
-            {/* Coming Soon Flag */}
-            <div className="inline-flex items-center gap-1.5 text-[10px] bg-brand-orange text-black font-black px-2.5 py-1.5 uppercase tracking-widest rounded-none leading-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-3.5 h-3.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.813 15.904 9 21l8.982-11.795h-5.282L14.75 3l-8.981 11.795h5.283Z"
-                />
-              </svg>
-              AI MEAL PROTOCOL — COMING SOON
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-black italic tracking-tight text-brand-text uppercase">
-                AI COGNITIVE MEAL PLANNER
-              </h3>
-              <p className="text-xs text-brand-text-muted leading-relaxed">
-                Unlock instant nutrition configuration. Our coming-soon deep network matches your active macros, daily workout exhaustion level, and grocery availability to spin up highly tailored keto feasts in 3 seconds.
-              </p>
-            </div>
-
-            {/* MOCK GENERATOR UI */}
-            <div className="bg-brand-bg border border-brand-border p-4 rounded-none space-y-4">
-              <p className="text-[9px] font-extrabold tracking-widest text-brand-text-muted uppercase">
-                COGNITIVE PARAMS (PREVIEW ONLY)
-              </p>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[9px] font-black text-brand-text-muted uppercase mb-1">
-                    TARGET CALORIC MASS
-                  </label>
-                  <select disabled className="w-full bg-brand-bg border border-brand-border p-2 text-xs text-brand-text-muted/50 rounded-none font-bold uppercase cursor-not-allowed">
-                    <option>1,200 - 1,500 KCAL (OMAD FEAST)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-brand-text-muted uppercase mb-1">
-                    DIETARY PROTOCOL
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="border border-brand-orange/30 bg-brand-orange/5 text-brand-orange text-[10px] p-2 font-black uppercase text-center cursor-not-allowed">
-                      STRICT KETO
-                    </div>
-                    <div className="border border-brand-border text-brand-text-muted/45 text-[10px] p-2 font-black uppercase text-center cursor-not-allowed">
-                      CARB CYCLING
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-brand-text-muted uppercase mb-1">
-                    PRIMARY PROTEIN FOCUS
-                  </label>
-                  <select disabled className="w-full bg-brand-bg border border-brand-border p-2 text-xs text-brand-text-muted/50 rounded-none font-bold uppercase cursor-not-allowed">
-                    <option>BEEF & COLDWATER FISH</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                disabled
-                className="w-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange/40 font-black text-xs tracking-widest py-3 uppercase cursor-not-allowed mt-2"
-              >
-                GENERATE PROTOCOL FEAST
-              </button>
-            </div>
-
-            <div className="text-[10px] text-brand-text-muted italic text-center">
-              * Active development is underway. Real intelligence engine will deploy soon.
-            </div>
-          </div>
+          <AiMealPlanner />
         </div>
       </div>
     </div>
