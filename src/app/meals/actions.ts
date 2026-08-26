@@ -198,7 +198,7 @@ Return ONLY this valid JSON object.`;
       },
     });
 
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(prompt, { timeout: 25000 });
     const textResponse = result.response.text();
 
     if (!textResponse) {
@@ -236,9 +236,12 @@ Return ONLY this valid JSON object.`;
     };
   } catch (apiErr: unknown) {
     console.error("Gemini API call failed:", apiErr);
+    const isTimeout = apiErr instanceof Error && /timeout/i.test(apiErr.message);
     return {
       success: false,
-      error: `API ERROR: Failed to communicate with the generative AI model. ${apiErr instanceof Error ? apiErr.message : String(apiErr)}`,
+      error: isTimeout
+        ? "TIMED OUT: The AI engine took too long to respond. Try again."
+        : "API ERROR: Failed to communicate with the generative AI model. Try again in a moment.",
     };
   }
 }

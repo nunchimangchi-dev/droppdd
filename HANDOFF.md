@@ -1209,3 +1209,29 @@ meal row landed correctly. Cover before wider use:
   (e.g. missing required field) does *not* itself trigger the cooldown.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — AI meal generation: request timeout + one more error leak
+
+Follow-up from a direct conversation about AI placement/risk/cost after
+the meals audit: the Gemini call had no request timeout at all - a slow
+or hung API response would leave a user staring at the loading spinner
+indefinitely, no client or server-side abort.
+
+### What was built
+- `model.generateContent(prompt, { timeout: 25000 })` - confirmed against
+  the installed `@google/generative-ai` SDK's actual type definitions
+  (`SingleRequestOptions.timeout`, milliseconds) rather than assumed;
+  25s ceiling before it's treated as failed.
+- **Found while touching this exact block**: the catch-all API-error
+  handler was echoing `apiErr.message` - the raw SDK error string -
+  directly to the end user. Same leak pattern as the two fixed earlier
+  this session, just missed on the first pass. Now returns a clean
+  generic message (timeout gets its own distinct message), full detail
+  still goes to `console.error` server-side only.
+
+### Manual test plan
+No browser available - not visually verified. `npm run build` and `npm
+run lint` both pass (confirmed). Cover before wider use: force a slow/
+hung response (or temporarily lower the timeout) and confirm the UI
+shows the new timeout-specific message rather than hanging forever on
+the loading state.
+
