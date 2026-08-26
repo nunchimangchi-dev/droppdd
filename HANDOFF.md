@@ -1157,3 +1157,55 @@ use:
   unchanged - confirmed by reading the generated SQL directly.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Meals UX audit follow-through
+
+Persona walkthrough of `/meals` (static catalog + AI planner) surfaced
+four real findings; all four fixed this pass.
+
+### What was built
+- **`mealPreference` now actually constrains AI generation.** Collected
+  at onboarding since the earlier consent-gate pass, but deliberately
+  left unwired then to avoid overclaiming. Now `generateAiMeal` reads the
+  user's `Progress.mealPreference` and injects a real dietary constraint
+  into the Gemini prompt for `VEGETARIAN` (no meat/poultry/fish/seafood)
+  and `CARNIVORE` (animal products only) - `NO_PREFERENCE` leaves the
+  prompt unchanged.
+- **A real vegetarian option in the static catalog.** Checked the actual
+  3 existing rows directly (not assumed): ribeye, salmon, bacon-and-eggs
+  - every one meat-based, guaranteeing a mismatch for any vegetarian
+    beta tester. Added `TRIPLE CHEESE SPINACH POWER BOWL` to `mockMeals`
+  and inserted it via a new one-off script,
+  `prisma/add-vegetarian-meal.ts` - deliberately **not** via
+  `prisma/seed.ts`, which was found to `deleteMany()` `Workout`, `Meal`,
+  `WeightRecord`, and `Progress` before reseeding. That's fine against a
+  disposable dev DB but would have destroyed every real beta user's
+  check-in history and streaks against prod - the script is a scoped,
+  idempotent `upsert` instead.
+- **Fixed leaked ops-facing error copy.** Two places told end users to
+  "verify server credentials" and check `process.env.GEMINI_API_KEY` -
+  internal debugging text with zero actionability for someone who has no
+  access to any server. Both replaced with real user-facing messages;
+  the actual detail still goes to `console.error` server-side.
+- **60-second per-user cooldown on AI generation** (new
+  `User.lastAiMealGeneratedAt`, additive migration). Guards a real cost
+  risk, not just UX: `generateAiMeal` makes a billed Gemini API call on a
+  key already flagged as shared with box's own CLI tooling (see the
+  tracked tech-debt decision in the skyrise dashboard). The cooldown is
+  spent right before the actual API call, not on a validation failure -
+  a rejected/invalid request shouldn't cost you your window, but a real
+  attempt (successful or not) should.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/meals` correctly `307`s to sign-in, zero compile/runtime
+errors in the dev server log) and direct DB verification that the new
+meal row landed correctly. Cover before wider use:
+- Generate a meal with `mealPreference` set to each of the three values,
+  confirm the returned recipe actually respects the constraint.
+- Confirm the vegetarian catalog meal renders identically to the other
+  three (same card markup, no special-casing needed).
+- Attempt to generate twice within 60 seconds, confirm the second
+  attempt is blocked with the cooldown message and a validation failure
+  (e.g. missing required field) does *not* itself trigger the cooldown.
+- `npm run build` and `npm run lint` both pass (confirmed).
+

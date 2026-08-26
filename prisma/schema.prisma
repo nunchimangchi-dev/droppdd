@@ -87,6 +87,7 @@ model User {
   emailVerified    DateTime?
   image            String?
   termsAcceptedAt  DateTime?
+  lastAiMealGeneratedAt DateTime? // cooldown guard - real billed Gemini API calls on a shared key
   accounts         Account[]
   sessions         Session[]
   wagers           Wager[]        @relation("WagerCreator")

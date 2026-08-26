@@ -2,7 +2,10 @@
 
 import { z } from "zod";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const COOLDOWN_SECONDS = 60;
 
 // Input validation schemas for the two entry points
 const pantryInputSchema = z.object({
@@ -49,7 +52,27 @@ export async function generateAiMeal(rawData: unknown) {
     };
   }
 
-  // 2. Validate input parameters
+  // 2. Cooldown - real, billed Gemini API calls on a key shared with box's
+  // own tooling (see skyrise decisions log). Blocks rapid-fire abuse,
+  // whether from someone mashing the button or a script bypassing the UI
+  // entirely and calling this action directly.
+  const userId = session.user.id;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lastAiMealGeneratedAt: true },
+  });
+  if (user?.lastAiMealGeneratedAt) {
+    const secondsSinceLast = (Date.now() - user.lastAiMealGeneratedAt.getTime()) / 1000;
+    if (secondsSinceLast < COOLDOWN_SECONDS) {
+      const wait = Math.ceil(COOLDOWN_SECONDS - secondsSinceLast);
+      return {
+        success: false,
+        error: `COOLDOWN ACTIVE: Wait ${wait}s before generating another protocol.`,
+      };
+    }
+  }
+
+  // 3. Validate input parameters
   const parsedInput = actionInputSchema.safeParse(rawData);
   if (!parsedInput.success) {
     const errorMsg = parsedInput.error.issues.map((issue) => issue.message).join(", ");
@@ -61,16 +84,17 @@ export async function generateAiMeal(rawData: unknown) {
 
   const input = parsedInput.data;
 
-  // 3. Check for API key
+  // 4. Check for API key
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    console.error("generateAiMeal: GEMINI_API_KEY is missing from the server environment.");
     return {
       success: false,
-      error: "CONFIGURATION ERROR: GEMINI_API_KEY is missing from the server environment.",
+      error: "AI ENGINE UNAVAILABLE: The meal planner is temporarily offline. Try again later.",
     };
   }
 
-  // 4. Initialize Gemini API Client
+  // 5. Initialize Gemini API Client
   let genAI: GoogleGenerativeAI;
   try {
     genAI = new GoogleGenerativeAI(apiKey);
@@ -82,12 +106,31 @@ export async function generateAiMeal(rawData: unknown) {
     };
   }
 
-  // 5. Construct the contextual prompt for Gemini
+  // 6. Pull the user's stated meal preference (set during onboarding) so
+  // it actually constrains generation instead of being collected and
+  // ignored.
+  const progress = await prisma.progress.findFirst({
+    where: { userId },
+    select: { mealPreference: true },
+  });
+  const mealPreference = progress?.mealPreference;
+
+  // 7. Construct the contextual prompt for Gemini
   let prompt = `You are a professional tactical keto/OMAD chef, sports nutritionist, and keto coach.
 Your task is to generate a highly tailored, bulletproof keto recipe matching the requested inputs.
 All recipes must align with low-carb, high-fat, high-protein protocols (such as OMAD FEAST, KETO POWER, or REFUEL category).
 
 `;
+
+  if (mealPreference === "VEGETARIAN") {
+    prompt += `DIETARY CONSTRAINT: The user is VEGETARIAN. Do not use any meat, poultry, fish, or seafood. Build the recipe around eggs, dairy, plant-based proteins, and low-carb vegetables to hit the required macros.
+
+`;
+  } else if (mealPreference === "CARNIVORE") {
+    prompt += `DIETARY CONSTRAINT: The user follows a strict CARNIVORE approach. Use only animal products - meat, poultry, fish, eggs, and dairy. Do not include any plant-based ingredients (no vegetables, fruits, grains, legumes, or nuts).
+
+`;
+  }
 
   if (input.type === "pantry") {
     prompt += `ENTRY POINT: PANTRY-DRIVEN ("kitchen sink").
@@ -138,6 +181,15 @@ The JSON object must strictly conform to this TypeScript schema:
 
 Return ONLY this valid JSON object.`;
 
+  // Mark the cooldown as spent now, right before the real API call - a
+  // validation failure above shouldn't burn it, but an actual attempt
+  // (successful or not) should, since it's the API cost being guarded
+  // against, not just button-mashing.
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lastAiMealGeneratedAt: new Date() },
+  });
+
   try {
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
@@ -156,7 +208,7 @@ Return ONLY this valid JSON object.`;
       };
     }
 
-    // 6. Attempt to parse JSON response
+    // 8. Attempt to parse JSON response
     let rawJson: unknown;
     try {
       rawJson = JSON.parse(textResponse);
@@ -168,7 +220,7 @@ Return ONLY this valid JSON object.`;
       };
     }
 
-    // 7. Zod-validate the model output against the schema
+    // 9. Zod-validate the model output against the schema
     const validatedMeal = generatedMealSchema.safeParse(rawJson);
     if (!validatedMeal.success) {
       console.error("Gemini output failed validation:", rawJson, validatedMeal.error);

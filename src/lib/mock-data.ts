@@ -189,6 +189,32 @@ export const mockMeals: Meal[] = [
       "Plate scramble in a deep bowl, top with a dollop of sour cream, fresh chives, and aggressive hot sauce splashes.",
     ],
   },
+  {
+    id: "triple-cheese-spinach-bowl",
+    title: "TRIPLE CHEESE SPINACH POWER BOWL",
+    description: "A vegetarian keto centerpiece - eggs and three cheeses deliver serious protein and fat without a gram of meat.",
+    calories: 720,
+    protein: 34,
+    fat: 58,
+    netCarbs: 6,
+    category: "KETO POWER",
+    ingredients: [
+      "4 Large Pasture-Raised Eggs",
+      "1 cup Shredded Sharp Cheddar Cheese",
+      "1/4 cup Crumbled Feta",
+      "2 tbsp Grated Parmesan",
+      "2 cups Fresh Organic Spinach",
+      "1 Whole Avocado, sliced",
+      "2 tbsp Butter",
+      "Salt & Black Pepper",
+    ],
+    instructions: [
+      "Melt butter in a skillet over medium heat and wilt the spinach for 1-2 minutes.",
+      "Push spinach to one side, whisk and pour in eggs, scrambling gently to soft curds.",
+      "Fold in cheddar, feta, and parmesan while eggs are still slightly wet - let residual heat finish melting them.",
+      "Season with salt and pepper, plate, and top with sliced avocado.",
+    ],
+  },
 ];
 
 export const mockProgress: ProgressData = {

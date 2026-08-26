@@ -255,7 +255,7 @@ export function AiMealPlanner() {
             {error}
           </p>
           <p className="text-[9px] text-brand-text-muted/60 mt-1 uppercase tracking-widest">
-            * Verify server credentials and make sure process.env.GEMINI_API_KEY is configured correctly.
+            * The AI engine hit a snag - try again in a moment.
           </p>
         </div>
       )}
