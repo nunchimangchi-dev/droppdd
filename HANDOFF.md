@@ -646,6 +646,60 @@ Because the agent operates headlessly in Auto-Edit mode, visual/aesthetic render
    - **Expected Result**: The action is not hard-blocked. `extra@test.com` is successfully added.
    - The slot counter badge updates to `11 / 10 BETA SLOTS USED`, and the warning banner remains active.
 
+# Handoff: Real AI Meal Planning Integration (feature/ai-meal-planning) - August 25, 2026
+
+## What was built
+- **Unified AI Generation Server Action (`src/app/meals/actions.ts`)**:
+  - Implemented a unified Server Action `generateAiMeal` that serves as the single generation engine supporting two key user entry points: Pantry-driven ("kitchen sink") and Macro-driven ("let's go shopping").
+  - Integrates the official `@google/generative-ai` SDK using the high-performance `gemini-1.5-flash` model and configures structured JSON responses via `responseMimeType: "application/json"`.
+  - Added strict Next-Auth session checks at the action entry point to ensure only authenticated users can run generations.
+  - Implemented strict input validation using Zod discriminated unions and structured output validation of the model's raw JSON response to ensure correctness before it reaches the frontend.
+  - Gracefully catches API errors, parse errors, and validation errors, returning structured `{ success: false, error: "..." }` responses to avoid application-level crashes.
+- **Interactive AI Meal Planner UI Component (`src/app/meals/AiMealPlanner.tsx`)**:
+  - Replaced the disabled mock panel in `src/app/meals/page.tsx` with a fully interactive client component.
+  - Created a dual-tab navigation selector ("🛒 Kitchen Sink" vs "🎯 Let's Go Shopping") supporting both generation modes in a single visual space.
+  - Added real input fields: a spacious textarea for raw pantry ingredients and four numeric input fields (Calories, Net Carbs, Protein, Fat) populated with standard tactical keto defaults.
+  - Implemented high-contrast brutalist loading states (pulsing card skeleton + disabled active buttons) and stylized error alerts if generation fails.
+  - Integrated dynamic rendering of the generated meal using the **exact same markup and responsive layout** already used for real `Meal` rows in the application, including custom rendering for the recommended grocery shopping run.
+
+## Key Architectural Decisions & Constraints
+- **Ephemeral-by-Design (No Persistence)**: Consistent with the product's premium roadmap, generated meal protocols are kept purely in-memory (ephemeral) on the client side. They are never written to the SQLite `Meal` table or database, nor do they touch any prisma models. No save button or database persistence has been scaffolded, preserving this as a clean up-sell boundary.
+- **Unified Prompt & Single Action**: Both modes invoke the same underlying server action. The action dynamically builds a structured Chef/Coach prompt based on the chosen entry point, ensuring highly consistent nutrition recommendations.
+- **Strict Error Boundary**: LLM outputs are treated as completely untrusted input. Raw text is parsed safely and Zod-validated against the schema before rendering.
+
+## Visual-Verification Caveat
+Because the agent operates headlessly in Auto-Edit mode, visual layout and aesthetics could not be verified in a real browser. The tabs, responsive forms, skeleton loading animations, and grocery checklist were designed strictly using standard theme colors, `.panel-aggressive`, `.btn-assault`, `.label-micro` typography, and the established high-contrast matte black/orange design. Manual visual verification is highly recommended.
+
+## Manual Test Plan (Run before shipping to Staging/Production)
+
+### Verification Without GEMINI_API_KEY
+1. **Navigate to Nutrition System Page (`/meals`)**:
+   - Access `/meals` in your browser.
+   - **Expected Result**: The previous disabled/preview-only mock fields are replaced by the active AI Meal Planner interface.
+2. **Toggle Modes**:
+   - Click back and forth between "Kitchen Sink (Pantry-Driven)" and "Let's Go Shopping (Macro-Driven)".
+   - **Expected Result**: The inputs switch smoothly from the pantry ingredients textarea to the macro targets grid, with zero page jitter.
+3. **Trigger Missing API Key Error**:
+   - Enter some ingredients (e.g. `eggs, bacon, spinach`) or keep the macro defaults and click "GENERATE PROTOCOL FEAST".
+   - **Expected Result**: The button changes to "COMPUTING FUEL PROTOCOL..." and enters a pulsing state. Within a second, a high-visibility, red-bordered "GENERATION THREAD INTERRUPTED" warning banner displays, explaining that `GEMINI_API_KEY` is missing from the server environment. This confirms the complete server action routing, authentication check, input validation, and error output boundaries are fully operational.
+
+### Verification With GEMINI_API_KEY
+1. **Configure Environment**:
+   - Add a valid `GEMINI_API_KEY="AIzaSy..."` to your local `.env` file and restart the development server.
+2. **Test Pantry-Driven Entry Point**:
+   - Choose the "Kitchen Sink" tab.
+   - Enter `ribeye steak, avocado, butter, salt`.
+   - Click "GENERATE PROTOCOL FEAST".
+   - **Expected Result**: The loading animation plays. Upon successful generation, a high-contrast card "SYNTHESIZED ACTIVE PROTOCOL:" appears below the form containing the customized recipe name, motivational description, calculated keto macros (high fat/protein, very low carb), preparation steps, and ingredients.
+3. **Test Macro-Driven Entry Point**:
+   - Choose the "Let's Go Shopping" tab.
+   - Keep or modify the targets (e.g. 1500 kcal, 10g net carbs, 120g protein, 110g fat).
+   - Click "GENERATE PROTOCOL FEAST".
+   - **Expected Result**: After loading, a custom recipe card appears matching these macros within a reasonable range. Below the cooking protocol, a custom "⚡ RECOMMENDED GROCERY RUN" section is rendered showing a checkbox-checklist of the ingredients needed at the store.
+4. **Test Session Gate**:
+   - Manually clear your sign-in cookie or open an incognito window and attempt to access `/meals`.
+   - **Expected Result**: You are blocked by the middleware/proxy and redirected to `/signin`. If you attempt to programmatically invoke the server action, it returns `UNAUTHORIZED`.
+
 
 
 
