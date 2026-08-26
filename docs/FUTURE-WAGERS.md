@@ -4,6 +4,19 @@ Not scheduled, not scoped for implementation yet — a roadmap note capturing
 the idea and the constraints around it before it turns into a `GEMINI-*`
 prompt. Written 2026-08-17.
 
+**2026-08-26 update: real-money phases (3 and 4) are dropped, not just
+deferred.** Decided during an App Store feasibility discussion — real money
+also drags in Apple's strict, inconsistent gambling-review stance on
+peer-vs-peer stakes, which would complicate or block a native app listing.
+But the deciding factor was independent of that: the maintainer's own
+experience is that people motivated enough to game a real-money fitness
+stake will just settle up outside the app anyway (a real-world workaround
+he ran himself for years against Fitbit's own step-based incentives) — so
+the legal/compliance cost of building real custody-adjacent payment flows
+buys less real enforcement than it looks like on paper. The free honor-system
+wager (phases 1-2, both already shipped) is the permanent shape of this
+feature, not a stepping stone to money.
+
 ## The idea
 
 Users can wager against themselves — or eventually another user — that
@@ -64,17 +77,21 @@ involved:
    guardrails built in from the start, not added later.
 2. **Add peers, still no money.** Social accountability, maybe a "witness"
    confirmation step, before payments enter the picture at all.
-3. **Real money, solo only.** Stripe + a charity payout API, no custody.
-   Legal review before this ships.
-4. **Peer-vs-peer real money.** Much later, if ever. Separate legal review
-   from phase 3 — don't assume clearing phase 3's review covers this.
+3. ~~Real money, solo only.~~ **Dropped 2026-08-26** — see update note above.
+4. ~~Peer-vs-peer real money.~~ **Dropped 2026-08-26** — see update note above.
+
+Phases 1-2 are both shipped; this feature is done. The "Legal shape" and
+"Safety" sections above are kept for historical context (they were real
+design input into phases 1-2's guardrails, e.g. the goal-aggressiveness
+cap) but the money-specific guidance no longer applies to any planned work.
 
 ## Open questions
 
-- Which charity payout API (every.org, Charity Navigator, a direct Stripe
-  Connect setup)?
-- What counts as a valid "witness" in phase 2 — another droppdd user, or
-  anyone with a link?
+- ~~Which charity payout API~~ — moot, no money phase.
+- ~~What counts as a valid "witness" in phase 2~~ — moot, phase 2 shipped
+  without a witness-confirmation step; resolution reads directly from
+  logged `Progress`/`WeightRecord` data instead.
 - Does a behavior-goal wager need its own tracking granularity beyond
   what `Workout`/`Meal` logging already captures, or is it derivable from
-  existing tables?
+  existing tables? Still open if behavior-goal wagers (vs. today's
+  outcome-goal wagers) ever get built.
