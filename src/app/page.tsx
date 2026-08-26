@@ -136,6 +136,12 @@ export default async function Dashboard() {
             <span className="font-extrabold text-brand-text-muted uppercase">TARGET MASS:</span>
             <span className="font-black text-brand-text">{progress.targetWeight} LBS</span>
           </div>
+          <Link
+            href="/checkin"
+            className="mt-4 inline-flex items-center justify-center border border-brand-orange/40 hover:border-brand-orange text-brand-orange font-black text-[10px] tracking-widest px-4 py-3 w-full text-center transition-all duration-150 uppercase"
+          >
+            LOG TODAY&apos;S CHECK-IN
+          </Link>
         </div>
       </div>
 

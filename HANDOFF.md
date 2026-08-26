@@ -1076,3 +1076,84 @@ wider use:
   username) preserves the rest of the form's entered values.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Daily Check-in (the app's core loop was actually missing)
+
+Real gap found while continuing the persona walkthrough, raised directly by
+the maintainer: there was no way to update weight after onboarding, and
+`Progress.currentStreak` was set to `0` at onboarding and never
+incremented anywhere in the entire codebase - confirmed by grepping the
+whole `src` tree for anything that touches `currentStreak` beyond reading
+it. `WorkoutTracker`'s set-completion checkboxes are pure client-side
+`useState`, nothing persists. In effect: the dashboard, Navbar, and
+leaderboard streak numbers were permanently frozen at 0 for every user,
+forever, and weight was a single one-time value from signup - the app's
+actual core premise (tracking progress) didn't function past day one.
+
+### What was built
+- **`WeightRecord.recordedAt DateTime @default(now())`** added alongside
+  the existing `date` display string (kept as-is, still just cosmetic).
+  The old field is a free-text string like `"Aug 25"` with no year - not
+  reliable for date math, so streak logic needed a real timestamp. Safe
+  additive migration (standard SQLite table-rebuild, existing rows keep
+  all their data, `recordedAt` backfilled to migration-apply-time for
+  the one pre-existing record every current user has).
+- **New `/checkin` route** (added to `Navbar.tsx` right after Dashboard -
+  this is now the most important recurring action in the app) - logs
+  today's weight (lbs/kg toggle, same conversion pattern as onboarding).
+- **Streak definition, confirmed with the maintainer before building**:
+  consecutive calendar days checked in. Checking in the day after your
+  last check-in increments `currentStreak`; a gap of 2+ days resets it to
+  1 on the next check-in; checking in again the same day updates that
+  day's entry instead of creating a duplicate or double-counting.
+  `bestStreak` tracks the max ever reached. New `src/lib/streak.ts`
+  (`isSameCalendarDay`, `isNextCalendarDay`) does the actual comparison,
+  UTC-based so day boundaries are consistent.
+- **`Progress.currentWeight` now actually updates** on every check-in,
+  which means the leaderboard percentage, dashboard trend, and
+  `WEIGHT_TARGET`/`STREAK_TARGET` wager resolution all become real for
+  the first time - previously a `WEIGHT_TARGET` wager could only ever
+  resolve `LOST` (via the end date passing), never `WON`, since
+  `currentWeight` never moved after onboarding.
+- **Dashboard gets a "LOG TODAY'S CHECK-IN" link** on the weight card for
+  discoverability.
+- `/progress`'s weight-history chart now sorts by `recordedAt` instead of
+  row insertion order (`id`), which is what it should have used all along.
+
+### Explicitly deferred (maintainer's own call)
+- **Exercise/workout completion logging** - `WorkoutTracker`'s
+  checkboxes stay exactly as they are (client-side only, non-persistent)
+  for now. Tracked as a real future feature, not forgotten - see the
+  skyrise dashboard backlog.
+
+### Known transient edge case, not fixed (self-corrects)
+Because existing beta users' one pre-existing `WeightRecord` got its new
+`recordedAt` backfilled to migration-apply-time, an existing user's very
+first check-in *on the same calendar day this ships* will register as
+"already checked in today" and update that record instead of starting a
+fresh streak of 1. Cosmetic only (streak just stays at 0 one extra day
+instead of becoming 1), fully self-corrects the next calendar day, and
+only affects users who were already onboarded before this deploy - not
+worth the complexity of special-casing for a one-day, non-destructive
+quirk.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/checkin`, `/progress`, `/` all correctly `307` to sign-in,
+zero compile/runtime errors in the dev server log). Cover before wider
+use:
+- Check in today, confirm `currentWeight` and the dashboard update
+  immediately.
+- Check in again the same day: confirm it updates today's `WeightRecord`
+  rather than creating a second one, and `currentStreak` doesn't
+  double-increment.
+- Check in on consecutive days: confirm `currentStreak` increments each
+  time and `bestStreak` tracks the max.
+- Skip a day, then check in: confirm `currentStreak` resets to 1, not 0
+  or some other value.
+- Confirm a previously-impossible `WEIGHT_TARGET` wager can now actually
+  resolve `WON` once `currentWeight` crosses the target via check-in.
+- Migration (`20260826125758_add_weight_record_timestamp`) is a standard
+  SQLite table-rebuild that copies every existing row's columns forward
+  unchanged - confirmed by reading the generated SQL directly.
+- `npm run build` and `npm run lint` both pass (confirmed).
+

@@ -49,10 +49,11 @@ model Meal {
 }
 
 model WeightRecord {
-  id     Int    @id @default(autoincrement())
+  id     Int      @id @default(autoincrement())
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date   String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   String // display string (e.g. "Aug 25") - kept for existing render code
+  recordedAt DateTime @default(now()) // real timestamp - source of truth for streak/consecutive-day math
   weight Float
 }
 

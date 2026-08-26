@@ -24,7 +24,7 @@ export default async function ProgressPage() {
 
   const weightHistory = await prisma.weightRecord.findMany({
     where: { userId: session.user.id },
-    orderBy: { id: 'asc' },
+    orderBy: { recordedAt: 'asc' },
   });
 
   return (
