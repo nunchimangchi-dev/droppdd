@@ -339,12 +339,20 @@ export default function WorkoutTracker({ workout }: WorkoutTrackerProps) {
           ABANDON ENGAGEMENT
         </Link>
 
-        <button
-          onClick={handleFinishWorkout}
-          className="btn-assault w-full sm:w-auto"
-        >
-          <span>FINISH WORKOUT & CLAIM VICTORY</span>
-        </button>
+        <div className="flex flex-col items-center sm:items-end gap-1.5">
+          <button
+            onClick={handleFinishWorkout}
+            disabled={completedSetsCount < totalSetsCount}
+            className="btn-assault w-full sm:w-auto disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <span>FINISH WORKOUT & CLAIM VICTORY</span>
+          </button>
+          {completedSetsCount < totalSetsCount && (
+            <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-wide">
+              {totalSetsCount - completedSetsCount} set{totalSetsCount - completedSetsCount === 1 ? "" : "s"} left to check off
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

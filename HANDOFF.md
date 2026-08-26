@@ -1235,3 +1235,40 @@ hung response (or temporarily lower the timeout) and confirm the UI
 shows the new timeout-specific message rather than hanging forever on
 the loading state.
 
+## 2026-08-26 — Workouts audit: finish-button completion guard
+
+Persona walkthrough of `/workouts` and the tracker. Good news: the
+dominant issue there (zero persistence - nothing survives a refresh) was
+already found and explicitly deferred as a future feature during the
+check-in audit (see `droppdd_exercise_logging_deferred` in session
+memory) - not re-flagged here. One new, independent finding, fixed this
+pass.
+
+### What was built
+- **"FINISH WORKOUT & CLAIM VICTORY" required zero sets checked.**
+  `handleFinishWorkout` fired unconditionally on click - a user could
+  land on a workout page and immediately claim victory (full celebration
+  screen, "~450 KCAL scorched" claim) having done nothing. This was a
+  real logic bug in the existing client-side experience, independent of
+  the persistence question - even with zero backend, the app shouldn't
+  let you "complete" a workout you haven't touched. The finish button is
+  now `disabled` until every set across every exercise is checked off,
+  with a live "N sets left to check off" hint while disabled.
+- Checked one other thing that looked suspicious but wasn't live: the
+  rest-timer's per-exercise quick-trigger button parses the `rest`
+  string with fragile substring matching (`.includes("120s")`, etc.,
+  defaulting to 60s otherwise). Verified against the actual seeded data
+  - every real value today happens to match correctly, so this isn't a
+  live bug, just brittle if a future workout uses a differently-worded
+  rest value. Not fixed this pass - not worth it until it's a real
+  problem.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/workouts` correctly `307`s to sign-in, zero compile/
+runtime errors in the dev server log). Cover before wider use: confirm
+the finish button is disabled with an unchecked set, confirm it enables
+the instant the last set is checked, confirm the "N sets left" hint
+count is accurate.
+- `npm run build` and `npm run lint` both pass (confirmed).
+
