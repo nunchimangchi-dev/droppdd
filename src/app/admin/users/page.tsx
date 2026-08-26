@@ -4,7 +4,15 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { checkAdmin } from "../actions";
 
-export default async function AdminUsersPage() {
+const SUCCESS_MESSAGES: Record<string, string> = {
+  "deleted": "User and all associated data permanently deleted.",
+};
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/signin");
@@ -21,6 +29,8 @@ export default async function AdminUsersPage() {
   if (!isAdmin) {
     redirect("/");
   }
+
+  const { success } = await searchParams;
 
   // Load all registered users and their relation counts
   const users = await prisma.user.findMany({
@@ -48,6 +58,13 @@ export default async function AdminUsersPage() {
           TROUBLESHOOTING PORTAL. READ-ONLY USER DISCIPLINE READOUT.
         </p>
       </div>
+
+      {success && (
+        <div className="bg-brand-safe/10 border-2 border-brand-safe text-brand-safe text-xs font-black p-4 rounded-none uppercase tracking-wider flex items-center gap-3">
+          <span className="text-xl">✅</span>
+          <span>{SUCCESS_MESSAGES[success] ?? "Operation completed successfully."}</span>
+        </div>
+      )}
 
       {/* Users list grid */}
       <div className="space-y-4">

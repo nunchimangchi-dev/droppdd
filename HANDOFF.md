@@ -1348,3 +1348,68 @@ months and confirm both the displayed year is correct and the ordering
 is truly chronological.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Admin data-rights flow (export + deletion)
+
+The second, larger finding from the admin audit: the Privacy Policy
+shipped earlier tonight promises maintainer-mediated account deletion and
+data export ("contact the maintainer... we'll verify it's really you...
+act within 30 days"), but no tooling existed anywhere to actually do it -
+today that meant hand-writing raw Prisma/SQL against prod. Design was
+confirmed with the maintainer before building anything.
+
+### What was built
+- **Kept the existing `/admin/users/[id]` page exactly as read-only** -
+  its "MUTATIONS DISALLOWED" banner stays true. The new capability lives
+  entirely on a separate, deliberately small/unobtrusive linked page
+  (`/admin/users/[id]/data-rights`), not bolted onto the troubleshooting
+  view.
+- **`/admin/users/[id]/export`** - a Route Handler (not a Server Action,
+  since this needs to trigger a real file download) returning a JSON
+  export of the target user's `Progress`, `WeightRecord`s, and both sides
+  of their `Wager` history, with `Content-Disposition: attachment`.
+  Explicitly placed outside `/api/` and given its own `auth()`/
+  `checkAdmin()` checks - `proxy.ts`'s middleware matcher excludes `/api`
+  from its blanket auth requirement, so anything living there would have
+  bypassed that check entirely. Confirmed via smoke test that an
+  unauthenticated request to this route still gets redirected.
+- **Consequence preview before deletion** - the data-rights page shows
+  real counts (progress records, weigh-ins, wagers created/challenged)
+  and explicitly flags if any ACTIVE/PENDING peer challenges exist, since
+  deleting a user also removes their side of those from the *other*
+  user's history - a real, non-obvious side effect of the cascade.
+- **Deletion mechanics verified empirically before building anything on
+  top of them**: created a throwaway test user with `Progress` and
+  `WeightRecord` rows in dev, ran `prisma.user.delete()`, confirmed both
+  child rows were gone. `onDelete: Cascade` sweeps `Account`, `Session`,
+  `Progress`, `WeightRecord`, and every `Wager` row (both created and
+  challenged) in one call - not assumed from reading the schema, actually
+  tested.
+- **Two-step confirmation, both enforced server-side**: a required
+  checkbox acknowledging the export step, and a typed exact
+  username/email match - re-verified inside `deleteUserData` against the
+  real database value, not trusted from the rendered page. A mismatch or
+  unchecked box redirects back to the same page with a specific error,
+  not a silent failure.
+- **Audit trail**: a `console.log` line (admin email, target user id/
+  username/email, timestamp) on every deletion - deliberately not a new
+  database table, given this is a rare, manual action for a ≤10-person
+  beta with at most 2 admins today. Revisit if that scale changes.
+
+### Manual test plan
+No browser available - not visually verified beyond smoke tests: both
+new routes correctly `307` to sign-in when unauthenticated (confirmed the
+export route specifically, given the `/api` exclusion risk noted above),
+zero compile/runtime errors in the dev server log. Cover before wider
+use:
+- As an admin, open the export link for a real test user and confirm the
+  downloaded JSON contains everything expected.
+- Attempt deletion with a mismatched confirmation string - confirm it's
+  rejected with the specific `confirmation-mismatch` error and nothing is
+  deleted.
+- Attempt deletion with the checkbox unchecked - browser-level `required`
+  should block submission before it even reaches the server, but confirm
+  the server-side check also rejects it if bypassed.
+- Perform a real deletion on a test user with an active peer challenge,
+  confirm the challenger's own wager list no longer shows it.
+- `npm run build` and `npm run lint` both pass (confirmed).
+

@@ -206,6 +206,19 @@ export default async function AdminUserDetailPage(props: {
           )}
         </div>
       </div>
+
+      {/* Deliberately small/unobtrusive - this is the one place in the
+          admin panel that can actually mutate/delete a user's data, kept
+          separate from the read-only page above rather than adding a
+          mutation here. */}
+      <div className="pt-4 border-t border-brand-border/40 text-right">
+        <Link
+          href={`/admin/users/${user.id}/data-rights`}
+          className="text-[10px] font-black tracking-widest text-brand-text-muted/60 hover:text-brand-danger uppercase transition-colors"
+        >
+          Data Rights Request (Export / Delete) →
+        </Link>
+      </div>
     </div>
   );
 }
