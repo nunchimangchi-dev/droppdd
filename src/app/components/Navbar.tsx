@@ -11,12 +11,13 @@ interface NavItem {
 
 interface NavbarProps {
   userEmail: string | null;
+  username?: string | null;
   signOutAction: () => Promise<void>;
   isAdmin?: boolean;
   currentStreak?: number;
 }
 
-export default function Navbar({ userEmail, signOutAction, isAdmin = false, currentStreak = 0 }: NavbarProps) {
+export default function Navbar({ userEmail, username = null, signOutAction, isAdmin = false, currentStreak = 0 }: NavbarProps) {
   const pathname = usePathname();
 
   // Helper to determine if path is active (exact match, or sub-path match for nested pages)
@@ -135,6 +136,26 @@ export default function Navbar({ userEmail, signOutAction, isAdmin = false, curr
         </svg>
       ),
     },
+    {
+      label: "PROFILE",
+      href: "/profile",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2.5}
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   if (isAdmin) {
@@ -210,7 +231,7 @@ export default function Navbar({ userEmail, signOutAction, isAdmin = false, curr
             <div className="space-y-4">
               <div className="flex flex-col gap-1 px-1">
                 <p className="text-[9px] text-brand-text-muted/65 font-bold tracking-widest uppercase">ACTIVE OPERATOR</p>
-                <p className="text-xs font-black text-brand-text-muted truncate tracking-tight uppercase italic">{userEmail}</p>
+                <p className="text-xs font-black text-brand-text-muted truncate tracking-tight uppercase italic">{username ? `@${username}` : userEmail}</p>
               </div>
               
               <form action={signOutAction} className="pt-2">

@@ -700,6 +700,72 @@ Because the agent operates headlessly in Auto-Edit mode, visual layout and aesth
    - Manually clear your sign-in cookie or open an incognito window and attempt to access `/meals`.
    - **Expected Result**: You are blocked by the middleware/proxy and redirected to `/signin`. If you attempt to programmatically invoke the server action, it returns `UNAUTHORIZED`.
 
+# Handoff: Required, Unique, Changeable Usernames (feature/username-system) - August 25, 2026
+
+## What was built
+- **Schema Migration (`prisma/schema.prisma` & migration script)**:
+  - Added a nullable unique `username String? @unique` field to the `User` model.
+  - Generated and applied a safe, additive SQLite migration `add_username_to_user` (`20260826011840_add_username_to_user`) which keeps existing production/beta rows completely intact.
+- **Database-Agnostic, Case-Insensitive Validation Engine (`src/lib/username.ts`)**:
+  - Created `usernameSchema` using Zod which enforces trimming, a 3-20 character limit, and alphanumeric plus underscore characters only (`^[a-zA-Z0-9_]+$`).
+  - Implemented `checkUsernameTaken` helper which retrieves active non-null usernames and validates availability using a database-agnostic, case-insensitive comparison (`.toLowerCase()`). This prevents database collation-specific bugs and makes it completely safe to run across SQLite and PostgreSQL databases.
+- **Username Picker Gate Page (`src/app/choose-username/`)**:
+  - Created a new gated picker page `/choose-username` and its corresponding Server Action `chooseUsername`.
+  - It validates the username, ensures there are no case-insensitive collisions, saves the precise casing chosen by the user in the database, and redirects them to the dashboard.
+  - It automatically blocks users who already have usernames by redirecting them back to `/`.
+- **Application-Level Gating (`src/app/page.tsx`, `src/app/progress/page.tsx`, `src/app/onboarding/page.tsx`, `src/app/wagers/page.tsx`)**:
+  - Gated all primary protected pages so that any authenticated session without a chosen username (`username === null`) is immediately redirected to `/choose-username`.
+- **Operator Profile Management (`src/app/profile/`)**:
+  - Created a new `/profile` settings page and its Server Action `updateUsername`.
+  - Renders current user credentials (Name, Email, Current Callsign) and allows them to update their username under the exact same validation rules and case-insensitive uniqueness checks as the initial picker.
+  - Seamlessly handles self-exclusion during the uniqueness check, allowing users to modify the casing of their own username (e.g., `dave` -> `Dave`) without throwing a duplicate callsign error.
+- **Navbar Identity Display Swap (`src/app/components/Navbar.tsx` & `src/app/layout.tsx`)**:
+  - Updated `src/app/layout.tsx` to retrieve the user's `username` alongside their streak/session details in a concurrent `Promise.all` query.
+  - Threaded the `username` to `<Navbar />`, swapping the sidebar and header identity displays to show the formatted username (e.g., `@hunter_99`) instead of the raw email address.
+  - Preserved a fallback to raw email address only for the rare/brief window before a user chooses a username.
+
+## Key Architectural Decisions & Constraints
+- **Nullable Column + Application Gate Migration Strategy**: Adding a non-nullable `username String @unique` column in a single migration would instantly fail or silently force unsafe defaults against existing beta user records in SQLite. By making the field nullable at the database level and enforcing mandatory selection via an application-level gate, we achieve the exact same behavior safely and additively without risking real database corruption or reset.
+- **In-Memory Case-Insensitive Matching**: SQLite has limited case-insensitive lookup capabilities because of default collation and type-filter constraints. Running case-insensitive comparisons inside the validation utility (`.toLowerCase()`) is completely database-independent, robust, and highly optimized for our small trusted beta.
+- **No Avatars / No Peer Wager Changes**: Left existing OAuth avatars, names, and emails completely untouched as requested to focus strictly on Phase 1 username protocols.
+
+## Visual-Verification Caveat
+Because the agent operates headlessly in Auto-Edit mode, visual layout and design could not be verified in a real browser. The picker page, the profile settings page, the new navbar profile tab (represented by a high-contrast user icon), and the alert banners were designed strictly using standard theme colors, `.panel-aggressive` panels, `.btn-assault` assault buttons, and the high-contrast aesthetic. Manual visual verification is highly recommended.
+
+## Manual Test Plan (Run before shipping to Staging/Production)
+
+### Test Case A: Gated Onboarding & Callsign Enforcement
+1. **Sign In with a Fresh Account**:
+   - Access the application and sign in.
+   - **Expected Result**: Since the account has no username, hitting `/`, `/progress`, `/wagers`, or `/onboarding` must instantly redirect the user to `/choose-username`.
+2. **Attempt to Bypass with Direct URL**:
+   - Manually enter `/` or `/onboarding` in the browser bar.
+   - **Expected Result**: Instantly redirected back to `/choose-username`.
+3. **Submit Blank or Invalid Callsigns**:
+   - Enter `a` (less than 3 chars), or a username with spaces/symbols (e.g. `cool boy!`).
+   - **Expected Result**: Frontend HTML validations or Server Action Zod validation blocks submission, redirecting to `/choose-username?error=invalid-format` showing the warning banner.
+
+### Test Case B: Case-Insensitive Uniqueness Check
+1. **Choose an Available Username**:
+   - On the fresh account, type `operator_x` and submit.
+   - **Expected Result**: Callsign is saved successfully, and the user is redirected to `/` (or `/onboarding` if progress data is still needed). The Sidebar immediately shows `@operator_x`.
+2. **Create Collision with Case-Variant**:
+   - Sign in with a second account (without a username).
+   - Enter `Operator_X` (different casing of the taken callsign) on the picker.
+   - **Expected Result**: Validation detects case-insensitive overlap and redirects the user to `/choose-username?error=taken` displaying "That username is already taken. Choose another."
+
+### Test Case C: Profile Settings & Casing Self-Exclusion
+1. **Access Profile settings**:
+   - Click the "PROFILE" tab in the desktop sidebar or tap it in the mobile navigation.
+   - **Expected Result**: Renders credentials successfully, displaying `@operator_x`.
+2. **Test Casing Change (Self-Exclusion)**:
+   - Type `Operator_X` (changing the casing of your own username) and submit "COMMIT CHANGE".
+   - **Expected Result**: The update succeeds because your own user ID is excluded from the uniqueness check. The profile and Navbar immediately reflect the updated casing `@Operator_X`.
+3. **Change to Another User's Callsign**:
+   - Type `another_user` (assuming `another_user` exists).
+   - **Expected Result**: Blocked by case-insensitive check, displaying the error.
+
+
 
 
 

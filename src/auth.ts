@@ -23,5 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
       return Boolean(allowed);
     },
+    async session({ session, user }) {
+      if (session.user && user) {
+        session.user.id = user.id;
+        session.user.username = (user as { username?: string | null }).username ?? null;
+      }
+      return session;
+    },
   },
 });

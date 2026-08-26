@@ -32,6 +32,9 @@ export default async function WagersPage({
   if (!session?.user?.id) {
     redirect("/signin");
   }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
+  }
   const userId = session.user.id;
   const { error } = await searchParams;
 

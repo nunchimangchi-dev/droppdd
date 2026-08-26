@@ -9,6 +9,9 @@ export default async function Dashboard() {
   if (!session?.user?.id) {
     redirect("/signin");
   }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
+  }
   const userId = session.user.id;
 
   const wod = await prisma.workout.findFirst({

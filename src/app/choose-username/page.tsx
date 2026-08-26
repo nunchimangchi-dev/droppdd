@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { onboardUser } from "./actions";
+import { chooseUsername } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-values": "All weights must be valid positive numbers.",
+  "missing": "Username is required.",
+  "invalid-format": "3-20 characters, alphanumeric & underscores only (no spaces).",
+  "taken": "That username is already taken. Choose another.",
 };
 
-export default async function OnboardingPage({
+export default async function ChooseUsernamePage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
@@ -16,17 +18,13 @@ export default async function OnboardingPage({
   if (!session?.user?.id) {
     redirect("/signin");
   }
-  if (!session?.user?.username) {
-    redirect("/choose-username");
-  }
 
-  const userId = session.user.id;
-
-  // If user already has progress data, do not show onboarding
-  const progress = await prisma.progress.findFirst({
-    where: { userId },
+  // If user already has a username, do not show this page
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { username: true },
   });
-  if (progress) {
+  if (user?.username) {
     redirect("/");
   }
 
@@ -42,10 +40,10 @@ export default async function OnboardingPage({
           </svg>
         </div>
         <h1 className="heading-mega">
-          INITIALIZE <span className="text-brand-orange">PROTOCOL</span>
+          ESTABLISH <span className="text-brand-orange">CALLSIGN</span>
         </h1>
         <p className="text-brand-text-muted text-xs font-black tracking-[0.3em] uppercase mt-2 leading-none">
-          WELCOME OPERATOR. ESTABLISH YOUR BASELINE AND TARGET GOAL.
+          CHOOSE A UNIQUE USERNAME. NO SPACES. ALPHANUMERIC & UNDERSCORE ONLY.
         </p>
       </div>
 
@@ -56,58 +54,31 @@ export default async function OnboardingPage({
         </div>
       )}
 
-      {/* Onboarding form */}
+      {/* Username selection form */}
       <div className="panel-aggressive relative">
         <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
         <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-6 flex items-center gap-2">
           <span className="w-1.5 h-6 bg-brand-orange block" />
-          PHYSICAL TELEMETRY CONFIGURATION
+          IDENTIFICATION TELEMETRY
         </h2>
 
-        <form action={onboardUser} className="space-y-5">
+        <form action={chooseUsername} className="space-y-5">
           <div>
             <label className="block label-micro mb-1.5">
-              STARTING MASS (LBS)
+              CHOSEN USERNAME
             </label>
             <input
-              type="number"
-              step="0.1"
-              name="startWeight"
+              type="text"
+              name="username"
               required
-              placeholder="e.g. 200"
+              minLength={3}
+              maxLength={20}
+              placeholder="e.g. hunter_99"
               className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
             />
-            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your weight at the beginning of this journey.</p>
-          </div>
-
-          <div>
-            <label className="block label-micro mb-1.5">
-              CURRENT MASS (LBS)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              name="currentWeight"
-              required
-              placeholder="e.g. 195"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-            />
-            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your weight today.</p>
-          </div>
-
-          <div>
-            <label className="block label-micro mb-1.5">
-              TARGET MASS (LBS)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              name="targetWeight"
-              required
-              placeholder="e.g. 180"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-            />
-            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your objective goal weight.</p>
+            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+              Casing will be preserved for display. Comparisons are case-insensitive.
+            </p>
           </div>
 
           <div className="pt-2">
@@ -115,7 +86,7 @@ export default async function OnboardingPage({
               type="submit"
               className="btn-assault w-full"
             >
-              <span>ENGAGE PROTOCOL</span>
+              <span>LOCK CALLSIGN</span>
             </button>
           </div>
         </form>
