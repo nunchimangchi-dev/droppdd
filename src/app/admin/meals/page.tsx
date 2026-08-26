@@ -25,6 +25,9 @@ export default async function AdminMealsPage({
   if (!session?.user?.id) {
     redirect("/signin");
   }
+  if (!session?.user?.termsAcceptedAt) {
+    redirect("/welcome");
+  }
   if (!session?.user?.username) {
     redirect("/choose-username");
   }

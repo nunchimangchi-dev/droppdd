@@ -13,11 +13,14 @@ export async function chooseUsername(formData: FormData) {
   }
   const userId = session.user.id;
 
-  // If user already has a username, do not allow resetting it via this route
   const existingUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { username: true },
+    select: { username: true, termsAcceptedAt: true },
   });
+  if (!existingUser?.termsAcceptedAt) {
+    redirect("/welcome");
+  }
+  // If user already has a username, do not allow resetting it via this route
   if (existingUser?.username) {
     redirect("/");
   }

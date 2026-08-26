@@ -59,14 +59,17 @@ model WeightRecord {
 // One row per user (queried with findFirst({ where: { userId } })), not
 // enforced with @@unique here since nothing today creates a second row.
 model Progress {
-  id             Int    @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   userId         String
-  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentStreak  Int
   bestStreak     Int
   targetWeight   Float
   currentWeight  Float
   startWeight    Float
+  age            Int?
+  heightInches   Float?
+  mealPreference String? // "CARNIVORE" | "VEGETARIAN" | "NO_PREFERENCE"
 }
 
 model AllowedEmail {
@@ -76,12 +79,13 @@ model AllowedEmail {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  username      String?   @unique
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
+  id               String    @id @default(cuid())
+  username         String?   @unique
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  termsAcceptedAt  DateTime?
   accounts         Account[]
   sessions         Session[]
   wagers           Wager[]        @relation("WagerCreator")

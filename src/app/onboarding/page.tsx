@@ -4,8 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { onboardUser } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-values": "All weights must be valid positive numbers.",
+  "invalid-values": "Check your entries - weights, age, and height must be valid positive numbers.",
 };
+
+const inputClass =
+  "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors";
+const selectClass =
+  "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-3 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer";
 
 export default async function OnboardingPage({
   searchParams,
@@ -15,6 +20,9 @@ export default async function OnboardingPage({
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/signin");
+  }
+  if (!session?.user?.termsAcceptedAt) {
+    redirect("/welcome");
   }
   if (!session?.user?.username) {
     redirect("/choose-username");
@@ -64,50 +72,107 @@ export default async function OnboardingPage({
           PHYSICAL TELEMETRY CONFIGURATION
         </h2>
 
+        <div className="bg-brand-safe/5 border border-brand-safe/30 p-4 mb-6 text-[10px] text-brand-text-muted font-bold uppercase tracking-wide leading-relaxed">
+          Your exact weight, age, and height are never shown to other users. The leaderboard only
+          ever shows a relative % toward your own goal and your streak - never a raw number.
+        </div>
+
         <form action={onboardUser} className="space-y-5">
           <div>
-            <label className="block label-micro mb-1.5">
-              STARTING MASS (LBS)
-            </label>
+            <label className="block label-micro mb-1.5">WEIGHT UNIT</label>
+            <select name="weightUnit" required defaultValue="LBS" className={selectClass}>
+              <option value="LBS">Pounds (lbs)</option>
+              <option value="KG">Kilograms (kg)</option>
+            </select>
+            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+              Applies to all three mass fields below.
+            </p>
+          </div>
+
+          <div>
+            <label className="block label-micro mb-1.5">STARTING MASS</label>
             <input
               type="number"
               step="0.1"
               name="startWeight"
               required
               placeholder="e.g. 200"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+              className={inputClass}
             />
             <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your weight at the beginning of this journey.</p>
           </div>
 
           <div>
-            <label className="block label-micro mb-1.5">
-              CURRENT MASS (LBS)
-            </label>
+            <label className="block label-micro mb-1.5">CURRENT MASS</label>
             <input
               type="number"
               step="0.1"
               name="currentWeight"
               required
               placeholder="e.g. 195"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+              className={inputClass}
             />
             <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your weight today.</p>
           </div>
 
           <div>
-            <label className="block label-micro mb-1.5">
-              TARGET MASS (LBS)
-            </label>
+            <label className="block label-micro mb-1.5">TARGET MASS</label>
             <input
               type="number"
               step="0.1"
               name="targetWeight"
               required
               placeholder="e.g. 180"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+              className={inputClass}
             />
             <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">Your objective goal weight.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block label-micro mb-1.5">AGE</label>
+              <input
+                type="number"
+                step="1"
+                name="age"
+                required
+                min={13}
+                max={120}
+                placeholder="e.g. 32"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block label-micro mb-1.5">HEIGHT</label>
+              <input
+                type="number"
+                step="0.1"
+                name="height"
+                required
+                placeholder="e.g. 70"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block label-micro mb-1.5">HEIGHT UNIT</label>
+            <select name="heightUnit" required defaultValue="IN" className={selectClass}>
+              <option value="IN">Inches (in)</option>
+              <option value="CM">Centimeters (cm)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block label-micro mb-1.5">MEAL PREFERENCE</label>
+            <select name="mealPreference" required defaultValue="NO_PREFERENCE" className={selectClass}>
+              <option value="NO_PREFERENCE">No preference</option>
+              <option value="CARNIVORE">Carnivore</option>
+              <option value="VEGETARIAN">Vegetarian</option>
+            </select>
+            <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+              Saved to your profile for future use.
+            </p>
           </div>
 
           <div className="pt-2">

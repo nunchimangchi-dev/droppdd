@@ -58,10 +58,19 @@ export default function SignInPage() {
             </button>
           </form>
 
-          <div className="pt-4">
+          <div className="pt-4 space-y-3">
             <p className="text-[9px] text-brand-text-muted/60 font-black tracking-widest uppercase">
               NO EXCUSES. NO WEAKNESS. ONLY RESULTS.
             </p>
+            <div className="flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-widest">
+              <a href="/legal/privacy" className="text-brand-text-muted/60 hover:text-brand-orange transition-colors">
+                Privacy Policy
+              </a>
+              <span className="text-brand-text-muted/30">&middot;</span>
+              <a href="/legal/terms" className="text-brand-text-muted/60 hover:text-brand-orange transition-colors">
+                Beta Terms
+              </a>
+            </div>
           </div>
         </div>
       </div>

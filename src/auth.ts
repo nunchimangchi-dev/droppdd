@@ -14,6 +14,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [Google],
   pages: {
     signIn: "/signin",
+    error: "/auth-error",
   },
   callbacks: {
     async signIn({ user }) {
@@ -26,7 +27,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, user }) {
       if (session.user && user) {
         session.user.id = user.id;
-        session.user.username = (user as { username?: string | null }).username ?? null;
+        const u = user as { username?: string | null; termsAcceptedAt?: Date | null };
+        session.user.username = u.username ?? null;
+        session.user.termsAcceptedAt = u.termsAcceptedAt ?? null;
       }
       return session;
     },

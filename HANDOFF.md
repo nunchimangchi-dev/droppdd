@@ -902,4 +902,79 @@ compile/runtime errors in the dev server log). Cover before wider use:
 - Confirm the 0/1-user empty state renders instead of a broken table.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+## 2026-08-26 — Onboarding UX fixes (cold-visitor audit follow-through)
+
+Direct follow-through on the onboarding-UX audit findings tracked in
+skyrise's dashboard/memory. Built directly, same as peer-wagers/leaderboard.
+
+### What was built
+- **Consent gate (`/welcome`)**: new required step between sign-in and
+  `/choose-username`/`/onboarding`. Summarizes what data gets collected,
+  links to full `/legal/privacy` and `/legal/terms` pages, requires a
+  checkbox before setting `User.termsAcceptedAt`. Every previously-gated
+  route (14 files) got the same check added ahead of the username check;
+  `/choose-username`'s own server action re-verifies it too, not just the
+  page, matching this codebase's existing defense-in-depth convention.
+- **Real Privacy Policy + Terms pages** (`/legal/privacy`, `/legal/terms`,
+  both publicly reachable, no auth required): adapted from the drafted
+  content on the previously-unmerged `docs/legal-draft` branch, corrected
+  for current reality (public Cloudflare-fronted hosting, not
+  Tailscale-only; AI meal planning is live, not planned; added
+  username/peer-wager/leaderboard visibility disclosure). Linked from both
+  `/signin` and `/welcome`.
+- **Branded `AccessDenied` error page** (`/auth-error`): `auth.ts` now
+  sets `pages.error`, replacing Auth.js's bare unstyled default template
+  with one matching the app's actual design, explaining the beta-gate
+  reason instead of a generic "Access Denied."
+- **New onboarding fields**: age, height, and meal preference
+  (carnivore/vegetarian/no preference) added to `Progress`, captured in
+  `/onboarding`'s form. Weight and height each get a unit selector
+  (lbs/kg, inches/cm) - converted to canonical lbs/inches server-side
+  before storage, so the rest of the app (leaderboard math, wagers) never
+  has to think about units.
+- **Privacy reassurance copy**: `/choose-username` now states the
+  username is visible to other beta users on the leaderboard and in
+  wager challenges; `/onboarding` now states weight/age/height are never
+  shown to other users, only a relative % on the leaderboard.
+- **Dashboard honesty fixes**: removed the `mockOMAD` import entirely -
+  the "FASTING WINDOW (OMAD)" card was 100% static mock data presented as
+  a live countdown for every user, forever. Replaced with an honest
+  "NOT TRACKED YET / COMING SOON" state. Fixed two day-zero copy
+  mismatches: "STREAK ACTIVE & STRONG" now only shows when
+  `currentStreak > 0`; "X LBS SHED TOTAL" now shows "BASELINE LOCKED IN"
+  when `startWeight === currentWeight` (guaranteed true for every user on
+  day one).
+
+### Explicitly out of scope for this pass (confirmed with the maintainer)
+- Real per-user OMAD/fasting-window tracking (needs a new meal-timing
+  log data model - genuine feature work, not a copy fix).
+- Changing the "nothing viewable until onboarding is complete" gating to
+  allow a pre-commitment read-only browse - architectural decision,
+  deferred.
+- Wiring the new `mealPreference` field into the AI meal-generation
+  prompt (`src/app/meals/actions.ts`) - the onboarding copy was written
+  to say "saved to your profile," not "used to steer AI suggestions,"
+  specifically to avoid overclaiming a feature that isn't built. Adding
+  that wiring is a separate, later pass.
+- "Today's WOD" / "upcoming meal" still being the same fixed catalog row
+  for every user (`findFirst()`, no rotation) - tracked but not fixed
+  this pass, lower severity than the rest.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test of every new/changed route (`/`, `/welcome`, `/choose-username`,
+`/onboarding` all correctly `307` to `/signin`; `/legal/privacy`,
+`/legal/terms`, `/auth-error` all correctly `200` without auth; zero
+compile/runtime errors in the dev server log). Cover before wider use:
+- Full flow: sign in -> `/welcome` (checkbox required, unchecked submit
+  is rejected) -> `/choose-username` -> `/onboarding` (all new fields,
+  both unit toggles) -> dashboard renders with the new honest OMAD
+  placeholder and correct day-one copy.
+- A user who already accepted terms doesn't see `/welcome` again on
+  subsequent visits (checked via direct DB query in the page, not
+  session-only, matching the username-gate pattern).
+- Migration (`20260826120131_add_terms_acceptance_and_profile_fields`) is
+  a plain additive `ALTER TABLE ADD COLUMN` (confirmed by reading the
+  generated SQL) - no table rebuild, no risk to existing rows.
+- `npm run build` and `npm run lint` both pass (confirmed).
 

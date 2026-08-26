@@ -18,6 +18,9 @@ export default async function ChooseUsernamePage({
   if (!session?.user?.id) {
     redirect("/signin");
   }
+  if (!session?.user?.termsAcceptedAt) {
+    redirect("/welcome");
+  }
 
   // If user already has a username, do not show this page
   const user = await prisma.user.findUnique({
@@ -78,6 +81,9 @@ export default async function ChooseUsernamePage({
             />
             <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
               Casing will be preserved for display. Comparisons are case-insensitive.
+            </p>
+            <p className="text-[10px] text-brand-orange mt-2 uppercase font-bold">
+              Visible to every other beta operator on the leaderboard and in wager challenges - choose accordingly.
             </p>
           </div>
 

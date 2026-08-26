@@ -2,12 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { mockOMAD } from "@/lib/mock-data";
 
 export default async function Dashboard() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/signin");
+  }
+  if (!session?.user?.termsAcceptedAt) {
+    redirect("/welcome");
   }
   if (!session?.user?.username) {
     redirect("/choose-username");
@@ -49,38 +51,30 @@ export default async function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* FASTING STATUS / OMAD */}
+        {/* FASTING STATUS / OMAD - honest placeholder, real per-user fasting-window
+            tracking isn't built yet (would need a meal-timing log, not just a
+            static number) - don't present fake data as a live countdown. */}
         <div className="panel-aggressive flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
               <span className="text-[10px] tracking-[0.2em] font-extrabold text-brand-orange uppercase leading-none">
                 FASTING WINDOW (OMAD)
               </span>
-              <span className="text-[9px] font-black bg-brand-orange/10 text-brand-orange px-2 py-0.5 rounded-none border border-brand-orange/20 uppercase leading-none">
-                {mockOMAD.status}
+              <span className="text-[9px] font-black bg-brand-border/40 text-brand-text-muted px-2 py-0.5 rounded-none border border-brand-border uppercase leading-none">
+                NOT TRACKED YET
               </span>
             </div>
-            <h2 className="text-4xl font-black tracking-tight mt-4 text-brand-text italic uppercase">
-              {mockOMAD.timeRemaining}
+            <h2 className="text-2xl font-black tracking-tight mt-4 text-brand-text-muted italic uppercase">
+              COMING SOON
             </h2>
             <p className="text-[10px] text-brand-text-muted font-extrabold uppercase mt-1">
-              REMAINING UNTIL FEAST
+              REAL-TIME FASTING TRACKING ISN&apos;T BUILT YET
             </p>
           </div>
 
-          <div className="mt-6">
-            <div className="flex justify-between text-[10px] font-black text-brand-text-muted uppercase mb-1">
-              <span>{mockOMAD.hoursCompleted} HRS DONE</span>
-              <span>{mockOMAD.hoursTotal} HRS TOTAL</span>
-            </div>
-            <div className="w-full bg-brand-bg h-2 rounded-none overflow-hidden">
-              <div
-                className="bg-brand-orange h-full transition-all duration-300"
-                style={{ width: `${mockOMAD.percentComplete}%` }}
-              />
-            </div>
-            <p className="text-[9px] text-brand-text-muted font-bold uppercase tracking-wider mt-2">
-              Eating window: {mockOMAD.windowStart} - {mockOMAD.windowEnd}
+          <div className="mt-6 border-t border-brand-border pt-4">
+            <p className="text-[9px] text-brand-text-muted font-bold uppercase tracking-wider">
+              Log your meals manually via the Nutrition System for now.
             </p>
           </div>
         </div>
@@ -98,7 +92,7 @@ export default async function Dashboard() {
               <span className="text-lg font-black text-brand-orange italic">DAYS</span>
             </div>
             <p className="text-[10px] text-brand-text-muted font-extrabold uppercase mt-1">
-              STREAK 🔥 ACTIVE & STRONG
+              {progress.currentStreak > 0 ? "STREAK 🔥 ACTIVE & STRONG" : "DAY ONE. LET'S GO."}
             </p>
           </div>
 
@@ -121,7 +115,9 @@ export default async function Dashboard() {
               <span className="text-sm font-black text-brand-text-muted italic">LBS</span>
             </div>
             <p className="text-[10px] text-brand-safe font-extrabold uppercase mt-1">
-              ↓ {(progress.startWeight - progress.currentWeight).toFixed(1)} LBS SHED TOTAL
+              {progress.startWeight === progress.currentWeight
+                ? "BASELINE LOCKED IN"
+                : `↓ ${(progress.startWeight - progress.currentWeight).toFixed(1)} LBS SHED TOTAL`}
             </p>
           </div>
 
