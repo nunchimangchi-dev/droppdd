@@ -35,6 +35,10 @@ export function evaluateWager(
   return "ACTIVE";
 }
 
+export function formatMetricValue(metric: string, value: number): string {
+  return metric === "WEIGHT_TARGET" ? `${value} LBS` : `${value} DAYS`;
+}
+
 // %-bodyweight/week implied by moving from startValue to targetValue over
 // the given window. Only meaningful for WEIGHT_TARGET loss goals - callers
 // should only apply the safety cap in that case (see docs/FUTURE-WAGERS.md).

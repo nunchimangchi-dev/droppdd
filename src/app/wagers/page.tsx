@@ -1,9 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { evaluateWager, impliedWeeklyRatePercent } from "@/lib/wagers";
-import { findUserByUsername } from "@/lib/username";
+import { evaluateWager, formatMetricValue } from "@/lib/wagers";
+import { createWager } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "no-progress": "Log some progress first — a wager needs a starting point to measure against.",
@@ -16,22 +16,20 @@ const ERROR_MESSAGES: Record<string, string> = {
   "invalid-challenge": "That challenge isn't yours to respond to, or it's already been resolved.",
 };
 
-// Server-side validation for wager creation - the form's <select> and
-// input constraints only enforce this client-side, which is trivially
-// bypassed by anyone posting to the action directly.
-const createWagerSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  metric: z.enum(["WEIGHT_TARGET", "STREAK_TARGET"]),
-  targetValue: z.coerce.number().finite(),
-  stakeDescription: z.string().trim().min(1).max(500),
-  endDate: z.coerce.date(),
-  challengeUsername: z.string().trim().optional(),
-});
+type SearchParams = {
+  error?: string;
+  title?: string;
+  metric?: string;
+  targetValue?: string;
+  stakeDescription?: string;
+  endDate?: string;
+  challengeUsername?: string;
+};
 
 export default async function WagersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -44,7 +42,8 @@ export default async function WagersPage({
     redirect("/choose-username");
   }
   const userId = session.user.id;
-  const { error } = await searchParams;
+  const sp = await searchParams;
+  const { error } = sp;
 
   const progress = await prisma.progress.findFirst({ where: { userId } });
 
@@ -98,146 +97,6 @@ export default async function WagersPage({
     include: { user: { select: { username: true } } },
   });
 
-  async function createWager(formData: FormData) {
-    "use server";
-
-    const session = await auth();
-    if (!session?.user?.id) redirect("/signin");
-    const userId = session.user.id;
-
-    const parsed = createWagerSchema.safeParse({
-      title: formData.get("title"),
-      metric: formData.get("metric"),
-      targetValue: formData.get("targetValue"),
-      stakeDescription: formData.get("stakeDescription"),
-      endDate: formData.get("endDate"),
-      challengeUsername: formData.get("challengeUsername") || undefined,
-    });
-
-    if (!parsed.success) {
-      redirect("/wagers?error=missing-fields");
-    }
-
-    const { title, metric, targetValue, stakeDescription, endDate, challengeUsername } = parsed.data;
-    const now = new Date();
-
-    if (endDate <= now) {
-      redirect("/wagers?error=invalid-date");
-    }
-
-    // Peer challenge path: no startValue yet (captured at accept-time from
-    // the challenged user's own progress), status PENDING. The creator
-    // doesn't need their own Progress row for this - they're not the one
-    // being measured.
-    if (challengeUsername && challengeUsername.length > 0) {
-      const targetUser = await findUserByUsername(challengeUsername);
-      if (!targetUser) {
-        redirect("/wagers?error=user-not-found");
-      }
-      if (targetUser.id === userId) {
-        redirect("/wagers?error=self-challenge");
-      }
-
-      await prisma.wager.create({
-        data: {
-          userId,
-          challengedUserId: targetUser.id,
-          title,
-          metric,
-          targetValue,
-          stakeDescription,
-          endDate,
-          status: "PENDING",
-        },
-      });
-
-      redirect("/wagers");
-    }
-
-    // Solo path - unchanged from before peer challenges existed.
-    const progress = await prisma.progress.findFirst({ where: { userId } });
-    if (!progress) {
-      redirect("/wagers?error=no-progress");
-    }
-
-    const startValue =
-      metric === "WEIGHT_TARGET" ? progress.currentWeight : progress.currentStreak;
-
-    if (metric === "WEIGHT_TARGET" && targetValue < startValue) {
-      const rate = impliedWeeklyRatePercent(startValue, targetValue, now, endDate);
-      if (rate > 1) {
-        redirect("/wagers?error=too-aggressive");
-      }
-    }
-
-    await prisma.wager.create({
-      data: {
-        userId,
-        title,
-        metric,
-        startValue,
-        targetValue,
-        stakeDescription,
-        endDate,
-      },
-    });
-
-    redirect("/wagers");
-  }
-
-  async function respondToChallenge(formData: FormData) {
-    "use server";
-
-    const session = await auth();
-    if (!session?.user?.id) redirect("/signin");
-    const userId = session.user.id;
-
-    const wagerId = Number(formData.get("wagerId"));
-    const action = formData.get("action");
-
-    const wager = await prisma.wager.findUnique({ where: { id: wagerId } });
-    if (!wager || wager.challengedUserId !== userId || wager.status !== "PENDING") {
-      redirect("/wagers?error=invalid-challenge");
-    }
-
-    if (action === "reject") {
-      await prisma.wager.update({
-        where: { id: wagerId },
-        data: { status: "REJECTED", resolvedAt: new Date() },
-      });
-      redirect("/wagers");
-    }
-
-    if (action === "accept") {
-      const progress = await prisma.progress.findFirst({ where: { userId } });
-      if (!progress) {
-        redirect("/wagers?error=no-progress");
-      }
-
-      const startValue =
-        wager.metric === "WEIGHT_TARGET" ? progress.currentWeight : progress.currentStreak;
-
-      // Same goal-aggressiveness guardrail as solo creation, applied here
-      // instead of at challenge-creation time - the baseline (and therefore
-      // the implied pace) is only knowable once the challenged user's own
-      // progress is on the table.
-      if (wager.metric === "WEIGHT_TARGET" && wager.targetValue < startValue) {
-        const rate = impliedWeeklyRatePercent(startValue, wager.targetValue, new Date(), wager.endDate);
-        if (rate > 1) {
-          redirect("/wagers?error=too-aggressive");
-        }
-      }
-
-      await prisma.wager.update({
-        where: { id: wagerId },
-        data: { startValue, status: "ACTIVE" },
-      });
-      redirect("/wagers");
-    }
-
-    redirect("/wagers");
-  }
-
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Aggressive Section Header */}
@@ -275,107 +134,125 @@ export default async function WagersPage({
             No progress data yet — log a weigh-in first before creating a wager.
           </p>
         ) : (
-          <form action={createWager} className="space-y-5">
-            <div>
-              <label className="block label-micro mb-1.5">
-                CONTRACT TITLE / GOAL DESIGNATOR
-              </label>
-              <input
-                type="text"
-                name="title"
-                required
-                placeholder="e.g. Under 185 by October"
-                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-              />
+          <>
+            <div className="bg-brand-bg/60 border border-brand-border/60 p-3 mb-5 flex gap-6 text-[10px] font-bold uppercase tracking-wide text-brand-text-muted">
+              <span>YOUR CURRENT WEIGHT: <span className="text-brand-text">{progress.currentWeight} LBS</span></span>
+              <span>YOUR CURRENT STREAK: <span className="text-brand-text">{progress.currentStreak} DAYS</span></span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form action={createWager} className="space-y-5">
               <div>
                 <label className="block label-micro mb-1.5">
-                  TARGET METRIC
-                </label>
-                <select
-                  name="metric"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer"
-                >
-                  <option value="WEIGHT_TARGET">
-                    Weight target (currently {progress.currentWeight} lbs)
-                  </option>
-                  <option value="STREAK_TARGET">
-                    Streak target (currently {progress.currentStreak} days)
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block label-micro mb-1.5">
-                  TARGET ABSOLUTE VALUE
+                  CONTRACT TITLE / GOAL DESIGNATOR
                 </label>
                 <input
-                  type="number"
-                  step="0.1"
-                  name="targetValue"
+                  type="text"
+                  name="title"
                   required
-                  placeholder="e.g. 180"
+                  defaultValue={sp.title}
+                  placeholder="e.g. Under 185 by October"
                   className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block label-micro mb-1.5">
-                STAKE / INDENTURE (HONOR SYSTEM)
-              </label>
-              <input
-                type="text"
-                name="stakeDescription"
-                required
-                placeholder="e.g. $20 to Feeding America if I miss this"
-                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block label-micro mb-1.5">
+                    TARGET METRIC
+                  </label>
+                  <select
+                    name="metric"
+                    required
+                    defaultValue={sp.metric ?? "WEIGHT_TARGET"}
+                    className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer"
+                  >
+                    <option value="WEIGHT_TARGET">Weight target</option>
+                    <option value="STREAK_TARGET">Streak target</option>
+                  </select>
+                  <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                    Solo wager: resolves against your stats above. Challenge: resolves against theirs.
+                  </p>
+                </div>
 
-            <div>
-              <label className="block label-micro mb-1.5">
-                END DATE / RECKONING DAY
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                required
-                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer"
-              />
-            </div>
+                <div>
+                  <label className="block label-micro mb-1.5">
+                    TARGET ABSOLUTE VALUE
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="targetValue"
+                    required
+                    defaultValue={sp.targetValue}
+                    placeholder="e.g. 180"
+                    className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block label-micro mb-1.5">
-                CHALLENGE ANOTHER OPERATOR (OPTIONAL)
-              </label>
-              <input
-                type="text"
-                name="challengeUsername"
-                placeholder="leave blank for a solo wager, or enter their callsign"
-                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-              />
-              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
-                They&apos;ll need to accept before this becomes active - the target range shown above is the goal you&apos;re proposing, resolved against their progress, not yours.
-              </p>
-            </div>
+              <div>
+                <label className="block label-micro mb-1.5">
+                  STAKE / INDENTURE (HONOR SYSTEM)
+                </label>
+                <input
+                  type="text"
+                  name="stakeDescription"
+                  required
+                  defaultValue={sp.stakeDescription}
+                  placeholder="e.g. $20 to Feeding America if I miss this"
+                  className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+                />
+              </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="btn-assault w-full md:w-auto"
-              >
-                <span>LOCK IN COMMITMENT</span>
-              </button>
-            </div>
-          </form>
+              <div>
+                <label className="block label-micro mb-1.5">
+                  END DATE / RECKONING DAY
+                </label>
+                <input
+                  type="date"
+                  name="endDate"
+                  required
+                  defaultValue={sp.endDate}
+                  className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button type="submit" className="btn-assault w-full md:w-auto">
+                  <span>LOCK IN SOLO COMMITMENT</span>
+                </button>
+              </div>
+
+              <div className="border-t-2 border-dashed border-brand-border pt-5 mt-2">
+                <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-3">
+                  — OR CHALLENGE SOMEONE ELSE INSTEAD —
+                </p>
+                <label className="block label-micro mb-1.5">
+                  OPERATOR CALLSIGN
+                </label>
+                <input
+                  type="text"
+                  name="challengeUsername"
+                  defaultValue={sp.challengeUsername}
+                  placeholder="leave blank for a solo wager, or enter their callsign"
+                  className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+                />
+                <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                  They&apos;ll review and confirm before this becomes active - the target above resolves
+                  against <span className="text-brand-orange">their</span> stats, not yours.
+                </p>
+                <div className="pt-3">
+                  <button type="submit" className="btn-assault w-full md:w-auto">
+                    <span>SEND CHALLENGE</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </>
         )}
       </div>
 
-      {/* Challenges received - PENDING ones need Accept/Reject */}
+      {/* Challenges received - PENDING ones link to a review/confirm page */}
       {challengesReceived.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
@@ -410,25 +287,9 @@ export default async function WagersPage({
 
                   <div className="flex items-center gap-4">
                     {w.status === "PENDING" ? (
-                      <div className="flex gap-2">
-                        <form action={respondToChallenge}>
-                          <input type="hidden" name="wagerId" value={w.id} />
-                          <input type="hidden" name="action" value="accept" />
-                          <button type="submit" className="btn-assault !px-4 !py-2 text-xs">
-                            ACCEPT
-                          </button>
-                        </form>
-                        <form action={respondToChallenge}>
-                          <input type="hidden" name="wagerId" value={w.id} />
-                          <input type="hidden" name="action" value="reject" />
-                          <button
-                            type="submit"
-                            className="px-4 py-2 text-xs font-black uppercase tracking-wider border border-brand-danger/40 text-brand-danger hover:bg-brand-danger/10 transition-colors"
-                          >
-                            REJECT
-                          </button>
-                        </form>
-                      </div>
+                      <Link href={`/wagers/respond/${w.id}`} className="btn-assault !px-4 !py-2 text-xs">
+                        <span>REVIEW</span>
+                      </Link>
                     ) : (
                       <span className="text-[10px] font-black tracking-[0.2em] uppercase px-4 py-2 rounded-none leading-none border border-brand-border">
                         {w.status}
@@ -490,17 +351,17 @@ export default async function WagersPage({
               const daysLeft = Math.ceil((w.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
               const isUrgent = daysLeft <= 7;
               const isCritical = daysLeft <= 2;
-              
-              const borderClass = isCritical 
-                ? "border-brand-danger shadow-[0_0_15px_rgba(255,51,51,0.15)]" 
-                : isUrgent 
-                ? "border-brand-warning shadow-[0_0_15px_rgba(255,184,0,0.1)]" 
+
+              const borderClass = isCritical
+                ? "border-brand-danger shadow-[0_0_15px_rgba(255,51,51,0.15)]"
+                : isUrgent
+                ? "border-brand-warning shadow-[0_0_15px_rgba(255,184,0,0.1)]"
                 : "border-brand-orange/40 hover:border-brand-orange";
 
-              const badgeColor = isCritical 
-                ? "bg-brand-danger text-black" 
-                : isUrgent 
-                ? "bg-brand-warning text-black" 
+              const badgeColor = isCritical
+                ? "bg-brand-danger text-black"
+                : isUrgent
+                ? "bg-brand-warning text-black"
                 : "bg-brand-orange text-black";
 
               const urgencyLabel = isCritical
@@ -516,7 +377,7 @@ export default async function WagersPage({
                 >
                   {/* Subtle backing hazard striping */}
                   <div className="absolute inset-0 pointer-events-none opacity-[0.04] hazard-stripes" />
-                  
+
                   <div className="relative z-10">
                     <div className="flex justify-between items-start gap-4">
                       <span className={`text-[9px] font-black tracking-widest px-2.5 py-0.5 rounded-none uppercase leading-none ${badgeColor}`}>
@@ -530,11 +391,11 @@ export default async function WagersPage({
                     <h3 className="text-xl font-black text-brand-text mt-4 uppercase italic tracking-tight">
                       {w.title}
                     </h3>
-                    
+
                     <div className="mt-4 bg-brand-bg/60 border border-brand-border/60 p-4 space-y-1">
                       <p className="text-[10px] font-bold text-brand-text-muted uppercase">STRIKING RANGE:</p>
                       <p className="text-sm font-black text-brand-text uppercase">
-                        {w.startValue} <span className="text-brand-orange font-normal">→</span> {w.targetValue}
+                        {formatMetricValue(w.metric, w.startValue as number)} <span className="text-brand-orange font-normal">→</span> {formatMetricValue(w.metric, w.targetValue)}
                       </p>
                     </div>
 
@@ -595,15 +456,15 @@ export default async function WagersPage({
                       STAKE: <span className="text-brand-text/80">{w.stakeDescription}</span>
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center gap-6 justify-between sm:justify-start">
                     <div className="text-left sm:text-right">
                       <p className="text-[9px] font-extrabold tracking-widest text-brand-text-muted uppercase mb-0.5">TARGET RANGE</p>
                       <p className="text-xs font-black text-brand-text uppercase">
-                        {w.startValue} <span className="text-brand-text-muted">→</span> {w.targetValue}
+                        {formatMetricValue(w.metric, w.startValue as number)} <span className="text-brand-text-muted">→</span> {formatMetricValue(w.metric, w.targetValue)}
                       </p>
                     </div>
-                    
+
                     <span className={`text-[10px] font-black tracking-[0.2em] uppercase px-4 py-2 rounded-none leading-none ${badgeColorClass}`}>
                       {w.status}
                     </span>

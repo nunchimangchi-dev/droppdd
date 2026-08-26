@@ -1018,3 +1018,61 @@ day - `dayOfYearOffset` itself is a pure function, straightforward to
 unit test if that becomes worth doing). `npm run build` and `npm run
 lint` both pass (confirmed).
 
+## 2026-08-26 — Wagers UX audit follow-through
+
+Persona walkthrough of `/wagers` (solo + peer-challenge flows) surfaced
+six real findings; all six fixed this pass. No schema changes.
+
+### What was built
+- **Extracted `createWager`/`respondToChallenge` into `src/app/wagers/actions.ts`**
+  (previously inline in `page.tsx`) - needed since a new page now shares
+  `respondToChallenge`, breaking from this feature's previous
+  everything-inline convention out of necessity, not preference.
+- **Fixed the misleading metric dropdown**: it previously showed
+  "Weight target (currently 195 lbs)" using the *creator's* own stats,
+  even when the form was being used to challenge someone else - directly
+  contradicting the helper text right below it ("resolved against their
+  progress, not yours"). Now the dropdown just says "Weight target" /
+  "Streak target"; the creator's own current stats are shown once,
+  clearly, in a separate reference strip above the form.
+- **New `/wagers/respond/[id]` review page**: accepting a challenge
+  previously took one click with zero confirmation. Now "REVIEW" replaces
+  the old inline Accept/Reject buttons, landing on a page that shows
+  exactly what accepting means (current value -> target, computed live
+  against the challenged user's *own* current progress), a proactive
+  safety-pace warning *before* submission (not just after a rejected
+  attempt), and disables the Accept button outright if the implied pace
+  is unsafe or they have no Progress row yet.
+- **Guardrail rejections stay in context**: accepting a challenge that
+  fails the ~1%/week safety cap used to bounce back to the generic
+  `/wagers` list with a banner, leaving the challenge PENDING with no
+  explanation visible next to it. Now it redirects back to the same
+  review page with the specific warning inline, explaining the only two
+  real options (reject, or ask for a lighter target).
+- **Form state no longer wiped on error**: `createWager`'s validation
+  failures (typo'd username, aggressive pace, missing fields) previously
+  redirected to a blank form. Now submitted values are echoed back
+  through the redirect's query string and read as `defaultValue`s.
+- **Clearer solo/peer split**: the challenge-username field now sits
+  behind a visible "— OR CHALLENGE SOMEONE ELSE INSTEAD —" divider with
+  its own submit button, instead of reading as one more optional field in
+  an otherwise-solo form.
+- **Unit labels on Active/Resolved contract cards**: `formatMetricValue()`
+  (new, in `src/lib/wagers.ts`) renders `180 LBS` or `30 DAYS` instead of
+  a bare, ambiguous number - previously only the creation form's dropdown
+  had units, the actual wager cards didn't.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/wagers` and `/wagers/respond/[id]` both correctly `307` to
+sign-in, zero compile/runtime errors in the dev server log). Cover before
+wider use:
+- Full peer-challenge round trip with two real accounts: send a
+  challenge, confirm the review page shows the *challenged* user's own
+  stats (not the challenger's), confirm accepting an unsafe-pace target
+  is blocked with the inline warning, confirm a normal accept succeeds
+  and the wager goes ACTIVE.
+- Confirm a validation error on the creation form (e.g. a nonexistent
+  username) preserves the rest of the form's entered values.
+- `npm run build` and `npm run lint` both pass (confirmed).
+
