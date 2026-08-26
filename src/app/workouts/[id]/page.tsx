@@ -1,10 +1,20 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import WorkoutTracker from "./WorkoutTracker";
 
 export default async function WorkoutDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
+  }
+
   const { id } = await props.params;
   const workout = await prisma.workout.findUnique({
     where: { id },

@@ -1,7 +1,17 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AiMealPlanner } from "./AiMealPlanner";
 
 export default async function MealsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
+  }
+
   const meals = await prisma.meal.findMany();
 
   return (

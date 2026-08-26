@@ -1,7 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function WorkoutsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
+  }
+
   const workouts = await prisma.workout.findMany({
     include: { exercises: true },
   });

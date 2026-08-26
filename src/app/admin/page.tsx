@@ -24,13 +24,16 @@ export default async function AdminPage({
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.email) {
-    redirect("/");
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
   }
 
   // Load the AllowedEmail row for the current logged-in user
   const currentUserAllowed = await prisma.allowedEmail.findUnique({
-    where: { email: session.user.email },
+    where: { email: session.user.email ?? "" },
   });
 
   // Gated route: must be an admin to access this page

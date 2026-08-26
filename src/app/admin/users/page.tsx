@@ -6,8 +6,11 @@ import { checkAdmin } from "../actions";
 
 export default async function AdminUsersPage() {
   const session = await auth();
-  if (!session?.user?.email) {
-    redirect("/");
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
   }
 
   // Gate check

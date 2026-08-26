@@ -8,8 +8,11 @@ export default async function AdminUserDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.email) {
-    redirect("/");
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  if (!session?.user?.username) {
+    redirect("/choose-username");
   }
 
   // Gate check
