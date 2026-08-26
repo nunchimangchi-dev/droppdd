@@ -34,3 +34,27 @@ export async function checkUsernameTaken(username: string, excludingUserId?: str
     (u) => u.username?.toLowerCase() === username.toLowerCase()
   );
 }
+
+/**
+ * Finds a user by username (case-insensitive). Returns null if no user
+ * has that username set.
+ */
+export async function findUserByUsername(username: string): Promise<{ id: string; username: string } | null> {
+  const users = await prisma.user.findMany({
+    where: {
+      username: {
+        not: null,
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+    },
+  });
+
+  const match = users.find(
+    (u) => u.username?.toLowerCase() === username.toLowerCase()
+  );
+
+  return match && match.username ? { id: match.id, username: match.username } : null;
+}

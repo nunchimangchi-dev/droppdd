@@ -767,7 +767,91 @@ Because the agent operates headlessly in Auto-Edit mode, visual layout and desig
    - Type `another_user` (assuming `another_user` exists).
    - **Expected Result**: Blocked by case-insensitive check, displaying the error.
 
+## 2026-08-26 — Peer-to-peer wager challenges
 
+Phase 2 of `docs/FUTURE-WAGERS.md`'s own roadmap ("add peers, still no
+money"). Built directly (not via the usual Gemini-CLI pass — three
+consecutive attempts at this specific prompt stalled at 30+ minutes with
+zero tool calls, on both Auto-routed and explicitly-pinned models; the
+design was already fully specified in `docs/GEMINI-PEER-WAGERS-PROMPT.md`
+so it was implemented directly against that spec instead of retrying a
+fourth time).
+
+### What was built
+- `Wager.challengedUserId` (nullable) + a named `WagerChallenged` relation
+  on `User` - `null` means a solo wager, unchanged from phase 1.
+- `Wager.startValue` became nullable - a peer challenge is created with no
+  baseline (`status: "PENDING"`); the baseline is only captured once the
+  challenged user accepts, from *their own* `Progress` row at that moment.
+- New statuses: `PENDING` (awaiting response) and `REJECTED` (terminal).
+- `createWager` (in `src/app/wagers/page.tsx`) gained an optional
+  `challengeUsername` field. Solo-wager behavior is byte-for-byte
+  unchanged when it's absent - the peer path is a separate branch that
+  returns before touching the creator's own `Progress` at all (they don't
+  need one to challenge someone else).
+- New `respondToChallenge` action: verifies `session.user.id ===
+  wager.challengedUserId` before allowing Accept or Reject on a `PENDING`
+  wager - not just a UI-level restriction. Accept captures the challenged
+  user's current `Progress` as `startValue` and flips to `ACTIVE`. Reject
+  is terminal.
+- New `findUserByUsername` helper in `src/lib/username.ts` (case-
+  insensitive, mirrors the existing `checkUsernameTaken` pattern).
+- Resolution loop extended: it now also auto-resolves `ACTIVE` wagers
+  where `challengedUserId === me`, evaluated against *my* `Progress` -
+  `evaluateWager` itself was not touched. Explicitly excludes wagers I
+  created *for* someone else from this check (those resolve on their
+  page load, against their data, not mine).
+- `/wagers` gained two new sections: "Challenges Against You" (with
+  Accept/Reject buttons on `PENDING` ones) and "Challenges You've Sent".
+  The existing "Active Contracts"/"Resolved Contracts" sections were
+  re-scoped to solo wagers only (`challengedUserId: null`) so their
+  behavior and rendering are unchanged.
+- `/profile` gained a stats panel: accepted / won / lost / rejected
+  counts of challenges received.
+
+### Goal-aggressiveness guardrail timing decision
+The existing safety cap (~1% bodyweight/week for `WEIGHT_TARGET`) can't
+run at challenge-creation time for a peer wager, because there's no
+`startValue` yet to compute an implied pace from - the challenger doesn't
+know the challenged user's current weight. Applied the same check instead
+at **accept-time**, once the challenged user's real baseline is on the
+table, blocking the accept (not the original challenge) with the same
+`too-aggressive` error if the pace is unsafe. This keeps the safety net
+in place without inventing a check that has no data to run against.
+
+### Explicitly out of scope (per the prompt / FUTURE-WAGERS.md)
+No witness/mutual-confirmation step, no notifications, no new metric
+types (peer challenges use the same `WEIGHT_TARGET`/`STREAK_TARGET` as
+solo wagers - a "run a 5k"-style dare isn't resolvable without new
+tracking infrastructure that doesn't exist), no real money. `/admin`,
+`/meals`, `/workouts`, and the username system were not touched, other
+than one cosmetic side-effect: `admin/users/[id]/page.tsx` renders a
+peer wager's `startValue` as blank instead of a number while it's still
+`PENDING` (React renders `null` as nothing, not a crash) - left as-is
+since touching `/admin` is out of scope for this pass.
+
+### Manual test plan
+No browser available - not visually verified. Cover:
+- Regression: an existing/new solo wager (no `challengeUsername`) behaves
+  identically to before - same fields, same status flow.
+- Challenging a nonexistent username, or yourself, is rejected with a
+  clear error and doesn't create a row.
+- A `PENDING` challenge is only actionable (Accept/Reject visible and
+  functional) for the actual challenged user - verify the
+  `wager.challengedUserId !== userId` check, not just that the UI hides
+  the buttons.
+- Reject is terminal - no further state change possible on that wager.
+- Accept without a `Progress` row is blocked with `no-progress`, same as
+  solo creation.
+- Accepting a `WEIGHT_TARGET` challenge with an unsafe implied pace is
+  blocked with `too-aggressive`.
+- `/profile` stats counts match a manually-constructed set of test wagers
+  in each status.
+- `npm run build` and `npm run lint` both pass (confirmed).
+- Migration (`20260826040157_add_peer_wager_challenges`) is a standard
+  SQLite table-rebuild that copies every existing row's columns forward
+  unchanged - confirmed by reading the generated SQL directly, not just
+  trusting the "applied successfully" message.
 
 
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { evaluateWager, impliedWeeklyRatePercent } from "@/lib/wagers";
+import { findUserByUsername } from "@/lib/username";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "no-progress": "Log some progress first — a wager needs a starting point to measure against.",
@@ -10,6 +11,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   "invalid-date": "End date has to be in the future.",
   "too-aggressive":
     "That pace is faster than we'll let you wager on — capped at ~1% bodyweight/week. Pick a lighter target or a longer end date.",
+  "user-not-found": "No operator found with that callsign.",
+  "self-challenge": "You can't challenge yourself.",
+  "invalid-challenge": "That challenge isn't yours to respond to, or it's already been resolved.",
 };
 
 // Server-side validation for wager creation - the form's <select> and
@@ -21,6 +25,7 @@ const createWagerSchema = z.object({
   targetValue: z.coerce.number().finite(),
   stakeDescription: z.string().trim().min(1).max(500),
   endDate: z.coerce.date(),
+  challengeUsername: z.string().trim().optional(),
 });
 
 export default async function WagersPage({
@@ -40,14 +45,28 @@ export default async function WagersPage({
 
   const progress = await prisma.progress.findFirst({ where: { userId } });
 
+  // Only resolve wagers against MY OWN progress: solo wagers I created, and
+  // peer challenges where I'm the one being measured (challengedUserId ===
+  // me). A wager I created for someone ELSE (challengedUserId set, userId
+  // === me) must NOT be resolved here - it resolves against their progress
+  // when they load this page, not mine.
   const activeWagers = await prisma.wager.findMany({
-    where: { userId, status: "ACTIVE" },
+    where: {
+      status: "ACTIVE",
+      OR: [
+        { userId, challengedUserId: null },
+        { challengedUserId: userId },
+      ],
+    },
   });
 
   const now = new Date();
   await Promise.all(
     activeWagers.map(async (wager) => {
-      const resolved = evaluateWager(wager, progress, now);
+      // ACTIVE always implies startValue is set (solo: at creation, peer:
+      // at accept-time) - only PENDING peer challenges have a null one.
+      if (wager.startValue === null) return;
+      const resolved = evaluateWager({ ...wager, startValue: wager.startValue }, progress, now);
       if (resolved !== "ACTIVE") {
         await prisma.wager.update({
           where: { id: wager.id },
@@ -57,12 +76,24 @@ export default async function WagersPage({
     })
   );
 
-  const wagers = await prisma.wager.findMany({
-    where: { userId },
+  const soloWagers = await prisma.wager.findMany({
+    where: { userId, challengedUserId: null },
     orderBy: { createdAt: "desc" },
   });
-  const active = wagers.filter((w) => w.status === "ACTIVE");
-  const history = wagers.filter((w) => w.status !== "ACTIVE");
+  const active = soloWagers.filter((w) => w.status === "ACTIVE");
+  const history = soloWagers.filter((w) => w.status !== "ACTIVE");
+
+  const challengesSent = await prisma.wager.findMany({
+    where: { userId, challengedUserId: { not: null } },
+    orderBy: { createdAt: "desc" },
+    include: { challengedUser: { select: { username: true } } },
+  });
+
+  const challengesReceived = await prisma.wager.findMany({
+    where: { challengedUserId: userId },
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { username: true } } },
+  });
 
   async function createWager(formData: FormData) {
     "use server";
@@ -77,19 +108,50 @@ export default async function WagersPage({
       targetValue: formData.get("targetValue"),
       stakeDescription: formData.get("stakeDescription"),
       endDate: formData.get("endDate"),
+      challengeUsername: formData.get("challengeUsername") || undefined,
     });
 
     if (!parsed.success) {
       redirect("/wagers?error=missing-fields");
     }
 
-    const { title, metric, targetValue, stakeDescription, endDate } = parsed.data;
+    const { title, metric, targetValue, stakeDescription, endDate, challengeUsername } = parsed.data;
     const now = new Date();
 
     if (endDate <= now) {
       redirect("/wagers?error=invalid-date");
     }
 
+    // Peer challenge path: no startValue yet (captured at accept-time from
+    // the challenged user's own progress), status PENDING. The creator
+    // doesn't need their own Progress row for this - they're not the one
+    // being measured.
+    if (challengeUsername && challengeUsername.length > 0) {
+      const targetUser = await findUserByUsername(challengeUsername);
+      if (!targetUser) {
+        redirect("/wagers?error=user-not-found");
+      }
+      if (targetUser.id === userId) {
+        redirect("/wagers?error=self-challenge");
+      }
+
+      await prisma.wager.create({
+        data: {
+          userId,
+          challengedUserId: targetUser.id,
+          title,
+          metric,
+          targetValue,
+          stakeDescription,
+          endDate,
+          status: "PENDING",
+        },
+      });
+
+      redirect("/wagers");
+    }
+
+    // Solo path - unchanged from before peer challenges existed.
     const progress = await prisma.progress.findFirst({ where: { userId } });
     if (!progress) {
       redirect("/wagers?error=no-progress");
@@ -116,6 +178,59 @@ export default async function WagersPage({
         endDate,
       },
     });
+
+    redirect("/wagers");
+  }
+
+  async function respondToChallenge(formData: FormData) {
+    "use server";
+
+    const session = await auth();
+    if (!session?.user?.id) redirect("/signin");
+    const userId = session.user.id;
+
+    const wagerId = Number(formData.get("wagerId"));
+    const action = formData.get("action");
+
+    const wager = await prisma.wager.findUnique({ where: { id: wagerId } });
+    if (!wager || wager.challengedUserId !== userId || wager.status !== "PENDING") {
+      redirect("/wagers?error=invalid-challenge");
+    }
+
+    if (action === "reject") {
+      await prisma.wager.update({
+        where: { id: wagerId },
+        data: { status: "REJECTED", resolvedAt: new Date() },
+      });
+      redirect("/wagers");
+    }
+
+    if (action === "accept") {
+      const progress = await prisma.progress.findFirst({ where: { userId } });
+      if (!progress) {
+        redirect("/wagers?error=no-progress");
+      }
+
+      const startValue =
+        wager.metric === "WEIGHT_TARGET" ? progress.currentWeight : progress.currentStreak;
+
+      // Same goal-aggressiveness guardrail as solo creation, applied here
+      // instead of at challenge-creation time - the baseline (and therefore
+      // the implied pace) is only knowable once the challenged user's own
+      // progress is on the table.
+      if (wager.metric === "WEIGHT_TARGET" && wager.targetValue < startValue) {
+        const rate = impliedWeeklyRatePercent(startValue, wager.targetValue, new Date(), wager.endDate);
+        if (rate > 1) {
+          redirect("/wagers?error=too-aggressive");
+        }
+      }
+
+      await prisma.wager.update({
+        where: { id: wagerId },
+        data: { startValue, status: "ACTIVE" },
+      });
+      redirect("/wagers");
+    }
 
     redirect("/wagers");
   }
@@ -230,6 +345,21 @@ export default async function WagersPage({
               />
             </div>
 
+            <div>
+              <label className="block label-micro mb-1.5">
+                CHALLENGE ANOTHER OPERATOR (OPTIONAL)
+              </label>
+              <input
+                type="text"
+                name="challengeUsername"
+                placeholder="leave blank for a solo wager, or enter their callsign"
+                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
+              />
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                They&apos;ll need to accept before this becomes active - the target range shown above is the goal you&apos;re proposing, resolved against their progress, not yours.
+              </p>
+            </div>
+
             <div className="pt-2">
               <button
                 type="submit"
@@ -241,6 +371,106 @@ export default async function WagersPage({
           </form>
         )}
       </div>
+
+      {/* Challenges received - PENDING ones need Accept/Reject */}
+      {challengesReceived.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-brand-orange block" />
+            CHALLENGES AGAINST YOU ({challengesReceived.length})
+          </h2>
+          <div className="space-y-3">
+            {challengesReceived.map((w) => {
+              const statusColorClass =
+                w.status === "PENDING"
+                  ? "border-brand-warning/40 bg-brand-warning/[0.03]"
+                  : w.status === "WON"
+                  ? "border-brand-safe/20 bg-brand-safe/[0.02]"
+                  : "border-brand-danger/20 bg-brand-danger/[0.02]";
+
+              return (
+                <div
+                  key={w.id}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-none border transition-all duration-200 ${statusColorClass}`}
+                >
+                  <div className="space-y-1 mb-3 sm:mb-0">
+                    <span className="text-[9px] font-extrabold tracking-widest text-brand-text-muted block uppercase">
+                      CHALLENGED BY @{w.user.username} · {w.metric.replace("_", " ")}
+                    </span>
+                    <h4 className="text-base font-black text-brand-text uppercase italic">
+                      {w.title}
+                    </h4>
+                    <p className="text-xs text-brand-text-muted font-bold uppercase tracking-wide italic">
+                      STAKE: <span className="text-brand-text/80">{w.stakeDescription}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {w.status === "PENDING" ? (
+                      <div className="flex gap-2">
+                        <form action={respondToChallenge}>
+                          <input type="hidden" name="wagerId" value={w.id} />
+                          <input type="hidden" name="action" value="accept" />
+                          <button type="submit" className="btn-assault !px-4 !py-2 text-xs">
+                            ACCEPT
+                          </button>
+                        </form>
+                        <form action={respondToChallenge}>
+                          <input type="hidden" name="wagerId" value={w.id} />
+                          <input type="hidden" name="action" value="reject" />
+                          <button
+                            type="submit"
+                            className="px-4 py-2 text-xs font-black uppercase tracking-wider border border-brand-danger/40 text-brand-danger hover:bg-brand-danger/10 transition-colors"
+                          >
+                            REJECT
+                          </button>
+                        </form>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-black tracking-[0.2em] uppercase px-4 py-2 rounded-none leading-none border border-brand-border">
+                        {w.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Challenges you've sent */}
+      {challengesSent.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-brand-orange block" />
+            CHALLENGES YOU&apos;VE SENT ({challengesSent.length})
+          </h2>
+          <div className="space-y-3">
+            {challengesSent.map((w) => (
+              <div
+                key={w.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-none border border-brand-border/60"
+              >
+                <div className="space-y-1 mb-3 sm:mb-0">
+                  <span className="text-[9px] font-extrabold tracking-widest text-brand-text-muted block uppercase">
+                    CHALLENGING @{w.challengedUser?.username} · {w.metric.replace("_", " ")}
+                  </span>
+                  <h4 className="text-base font-black text-brand-text uppercase italic">
+                    {w.title}
+                  </h4>
+                  <p className="text-xs text-brand-text-muted font-bold uppercase tracking-wide italic">
+                    STAKE: <span className="text-brand-text/80">{w.stakeDescription}</span>
+                  </p>
+                </div>
+                <span className="text-[10px] font-black tracking-[0.2em] uppercase px-4 py-2 rounded-none leading-none border border-brand-border">
+                  {w.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Active wagers */}
       <div className="space-y-4">

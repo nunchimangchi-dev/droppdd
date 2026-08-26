@@ -38,6 +38,18 @@ export default async function ProfilePage({
     redirect("/signin");
   }
 
+  const challengesReceived = await prisma.wager.findMany({
+    where: { challengedUserId: userId },
+    select: { status: true },
+  });
+  const wagerStats = {
+    total: challengesReceived.length,
+    accepted: challengesReceived.filter((w) => w.status === "ACTIVE" || w.status === "WON" || w.status === "LOST").length,
+    won: challengesReceived.filter((w) => w.status === "WON").length,
+    lost: challengesReceived.filter((w) => w.status === "LOST").length,
+    rejected: challengesReceived.filter((w) => w.status === "REJECTED").length,
+  };
+
   return (
     <div className="space-y-8 animate-fade-in max-w-xl mx-auto">
       {/* Aggressive Section Header */}
@@ -85,6 +97,37 @@ export default async function ProfilePage({
             <span className="text-brand-text truncate max-w-xs">{user.email || "UNSPECIFIED"}</span>
           </div>
         </div>
+      </div>
+
+      {/* Peer Challenge Lifecycle */}
+      <div className="panel-aggressive">
+        <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
+          <span className="w-1.5 h-4 bg-brand-orange block" />
+          CHALLENGES RECEIVED
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="border border-brand-border py-3">
+            <p className="text-2xl font-black text-brand-text">{wagerStats.accepted}</p>
+            <p className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider mt-1">Accepted</p>
+          </div>
+          <div className="border border-brand-safe/30 py-3">
+            <p className="text-2xl font-black text-brand-safe">{wagerStats.won}</p>
+            <p className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider mt-1">Won</p>
+          </div>
+          <div className="border border-brand-danger/30 py-3">
+            <p className="text-2xl font-black text-brand-danger">{wagerStats.lost}</p>
+            <p className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider mt-1">Lost</p>
+          </div>
+          <div className="border border-brand-border py-3">
+            <p className="text-2xl font-black text-brand-text-muted">{wagerStats.rejected}</p>
+            <p className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider mt-1">Rejected</p>
+          </div>
+        </div>
+        {wagerStats.total === 0 && (
+          <p className="text-xs text-brand-text-muted font-bold uppercase tracking-wider mt-4">
+            No one&apos;s challenged you yet.
+          </p>
+        )}
       </div>
 
       {/* Change Username Form */}
