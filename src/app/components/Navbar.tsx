@@ -137,6 +137,26 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
       ),
     },
     {
+      label: "LEADERBOARD",
+      href: "/leaderboard",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2.5}
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H11.25m0-6.75V4.5m0 3.375L9 5.25m2.25 2.625L13.5 5.25M7.5 15.375v-2.25a2.625 2.625 0 0 1 2.625-2.625h3.75A2.625 2.625 0 0 1 16.5 13.125v2.25"
+          />
+        </svg>
+      ),
+    },
+    {
       label: "PROFILE",
       href: "/profile",
       icon: (

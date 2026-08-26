@@ -853,5 +853,53 @@ No browser available - not visually verified. Cover:
   unchanged - confirmed by reading the generated SQL directly, not just
   trusting the "applied successfully" message.
 
+## 2026-08-26 — Beta leaderboard
+
+Phase 3 of the beta expansion (multi-user infra -> AI meal planning ->
+username system -> peer wagers -> **this**). Built directly, same as the
+peer-wagers phase - no schema changes needed here, so there was nothing
+for a Gemini pass to add over just building it.
+
+### What was built
+- New `/leaderboard` route, gated exactly like every other route
+  (`session.user.id` -> `/signin`, `session.user.username` ->
+  `/choose-username`) - no additional role check, any signed-in user can
+  view it.
+- Queries every `User` with at least one `Progress` row, computes the
+  bounded percentage using `/progress`'s own formula verbatim (`((start -
+  current) / (start - target)) * 105`, clamped [5, 100]) - not
+  reimplemented, so it can't drift.
+- **Privacy**: `currentWeight`/`startWeight`/`targetWeight` are selected
+  from the database (needed to compute the percentage) but never appear
+  anywhere in the JSX - self-checked with `grep -nE
+  "currentWeight|startWeight|targetWeight|\.email\b"` against the
+  component before committing; every match is inside the query/formula,
+  none in the render. Display identity is `@username` (never falls back
+  to email or raw name - a user without a username can't reach this page
+  at all, so there's no fallback case to handle).
+- Sorted descending by percentage, current user's row highlighted, 0/1
+  real entries shows a plain "not enough operators yet" message instead
+  of an empty/broken table.
+- Added a real `LEADERBOARD` nav entry to `Navbar.tsx` (between WAGERS
+  and PROFILE) - reachable, not a hidden route.
+
+### Explicitly out of scope
+No new Prisma models or fields (pure read, computed in-memory). Didn't
+touch `/progress`, `/admin`, `/meals`, `/onboarding`, or `/wagers`. No
+opt-out/opt-in control for appearing on the board - every user with a
+`Progress` row appears, matching the original scoping.
+
+### Manual test plan
+No browser available - not visually verified beyond an unauthenticated
+smoke test (`/leaderboard` returns a clean `307` redirect, zero
+compile/runtime errors in the dev server log). Cover before wider use:
+- With 2+ real beta users logged in, confirm ranking order matches
+  `/progress`'s own displayed percentage for each of those users
+  individually (no drift between the two formulas, since it's the same
+  code).
+- Confirm no raw weight number or full email address is visible anywhere
+  in the rendered page for any user, including your own row.
+- Confirm the 0/1-user empty state renders instead of a broken table.
+- `npm run build` and `npm run lint` both pass (confirmed).
 
 
