@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { BETA_USER_LIMIT } from "@/lib/beta-limit";
 
 export async function checkAdmin() {
   const session = await auth();
@@ -47,6 +48,16 @@ export async function addAllowedEmail(formData: FormData) {
 
   if (existing) {
     redirect("/admin?error=email-exists");
+  }
+
+  // Admin invites don't count against the beta cap - only real beta testers do.
+  if (!isAdmin) {
+    const betaSlotsUsed = await prisma.allowedEmail.count({
+      where: { isAdmin: false },
+    });
+    if (betaSlotsUsed >= BETA_USER_LIMIT) {
+      redirect("/admin?error=beta-full");
+    }
   }
 
   await prisma.allowedEmail.create({

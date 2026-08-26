@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { addAllowedEmail, toggleAdminStatus, removeAllowedEmail } from "./actions";
+import { BETA_USER_LIMIT } from "@/lib/beta-limit";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "unauthorized": "Access denied. Admin authorization required.",
@@ -10,6 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   "email-exists": "This email address is already on the allowlist.",
   "last-admin": "Cannot remove or demote the last administrator. At least one admin is required.",
   "email-not-found": "Specified email address was not found.",
+  "beta-full": `Beta capacity reached (${BETA_USER_LIMIT} slots). Raise BETA_USER_LIMIT in admin/actions.ts and redeploy to add more.`,
 };
 
 const SUCCESS_MESSAGES: Record<string, string> = {
@@ -142,18 +144,18 @@ export default async function AdminPage({
             PROVISION NEW OPERATOR
           </h2>
           <span className={`text-xs font-black tracking-widest px-3 py-1.5 border leading-none ${
-            betaSlotsUsed >= 10
+            betaSlotsUsed >= BETA_USER_LIMIT
               ? "bg-brand-warning/10 text-brand-warning border-brand-warning/20 animate-pulse"
               : "bg-brand-orange/10 text-brand-orange border-brand-orange/20"
           }`}>
-            {betaSlotsUsed} / 10 BETA SLOTS USED
+            {betaSlotsUsed} / {BETA_USER_LIMIT} BETA SLOTS USED
           </span>
         </div>
 
-        {betaSlotsUsed >= 10 && (
+        {betaSlotsUsed >= BETA_USER_LIMIT && (
           <div className="bg-brand-warning/10 border-2 border-brand-warning text-brand-warning text-xs font-black p-4 rounded-none uppercase tracking-wider flex items-center gap-3 mb-5">
             <span className="text-xl">⚠️</span>
-            <span>BETA CAPACITY WARNING: YOU HAVE REACHED THE 10-SLOT LIMIT. ADDING MORE SHIFTS THE APPLICATION TO AN OVER-CAPACITY STATE.</span>
+            <span>BETA CAPACITY REACHED: {BETA_USER_LIMIT} SLOTS FILLED. NEW NON-ADMIN INVITES WILL BE REJECTED UNTIL A SLOT OPENS OR THE LIMIT IS RAISED IN CODE.</span>
           </div>
         )}
 

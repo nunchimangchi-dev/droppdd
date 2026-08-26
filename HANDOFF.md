@@ -1413,3 +1413,33 @@ use:
   confirm the challenger's own wager list no longer shows it.
 - `npm run build` and `npm run lint` both pass (confirmed).
 
+
+## 2026-08-26 — Beta cap actually enforced, not just displayed
+
+Admin panel already showed "X / 10 BETA SLOTS USED" with a warning banner
+at capacity, but `addAllowedEmail` had no cap-checking logic at all - the
+banner turned orange, the form kept working past 10 anyway. Fixed to
+actually block once the limit is hit.
+
+- **`BETA_USER_LIMIT = 10`** moved to its own `src/lib/beta-limit.ts`
+  rather than living in `admin/actions.ts` - a `"use server"` file can
+  only export async server actions, so a plain constant there breaks the
+  whole module at build time (caught this immediately via
+  `npm run build`, not left for a runtime surprise).
+- `addAllowedEmail` now counts existing non-admin `AllowedEmail` rows and
+  rejects with a new `beta-full` error once `BETA_USER_LIMIT` is reached.
+  Admin invites don't count against the cap - matches the existing
+  `betaSlotsUsed` display logic, which already excluded admins.
+- Deliberately a hard code-level limit, not a UI toggle: going over 10
+  requires bumping the constant and redeploying, a real decision rather
+  than a misclick past a warning banner.
+
+### Manual test plan
+No browser available - confirmed `/admin` correctly `307`s when
+unauthenticated, `npm run lint` and `npm run build` both pass. Cover
+before next beta invite:
+- As an admin with 10 non-admin operators already on the allowlist,
+  attempt to add an 11th - confirm it's rejected with the `beta-full`
+  message and no row is created.
+- Confirm an admin invite still succeeds past 10 non-admin slots (admins
+  shouldn't be capped).
