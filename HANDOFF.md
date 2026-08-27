@@ -1545,3 +1545,47 @@ moved it NEW -> IN_PROGRESS via the admin control (confirmed the count
 and column both updated), then deleted it (confirmed it's gone and the
 board returns to its empty state). `/board` correctly `307`s
 unauthenticated. `npm run build` and `npm run lint` both pass.
+
+## 2026-08-27 — AI meal planning: permanent swap from Gemini to Claude
+
+Prompted by a real outage: droppdd-prod's GEMINI_API_KEY is shared with
+box's own gemini CLI tooling (tracked tech debt since the AI-meal-planning
+phase), and that shared key ran out of quota, unusable until Saturday
+night. Rather than wait it out, swapped the provider entirely - also
+closes the shared-key tech debt in the same move, on a dedicated key
+this time instead of repeating the same mistake with a different
+provider.
+
+- `src/app/meals/actions.ts`: `@google/generative-ai` -> `@anthropic-ai/sdk`,
+  model -> `claude-haiku-4-5-20251001` (matches gemini-1.5-flash's
+  fast/cheap role for a rate-limited, cost-conscious feature). Confirmed
+  the SDK's real request-options shape (`{ timeout }` in `messages.create`)
+  from the installed package types before relying on it, not assumed.
+- Claude has no native JSON-only response mode (unlike Gemini's
+  `responseMimeType`) - the existing "respond with raw JSON only" prompt
+  instruction carries over unchanged and Claude follows it reliably, plus
+  added a defensive strip of an accidental markdown code fence before
+  parsing, since that failure mode is more plausible on this provider
+  than it was on Gemini's constrained-output mode. The existing Zod
+  validation of the model's output (already treating it as untrusted,
+  regardless of source) is completely unchanged.
+- `prisma/schema.prisma` comment and the Privacy Policy's AI-meal-planning
+  section both updated to name the real current processor (Anthropic, not
+  Google) - a stale privacy policy claiming the wrong third party would be
+  a real accuracy problem, not just cosmetic. Policy's "last updated" date
+  bumped to match.
+- `@google/generative-ai` removed from package.json entirely - permanent
+  swap, not a fallback, so no reason to keep the dead dependency.
+- Found and flagged, not fixed here: `npm install` surfaced a pre-existing
+  high-severity `deepmerge-ts` CVE via `@prisma/config` -> `prisma`,
+  confirmed unrelated to this change (prisma's own pinned version is
+  untouched in the lockfile diff) and requiring a breaking prisma major
+  version bump to fix - deliberately out of scope for this change, a
+  separate piece of work.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass. Real functional
+round-trip test (actual API call, not just build/lint) still needed
+once ANTHROPIC_API_KEY is live on droppdd-prod - generate a meal via
+both entry points (pantry-driven and macro-driven), confirm the
+returned JSON passes the existing Zod schema and renders correctly.

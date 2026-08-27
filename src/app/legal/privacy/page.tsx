@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
           PRIVACY <span className="text-brand-orange">POLICY</span>
         </h1>
         <p className="text-brand-text-muted text-xs font-black tracking-[0.3em] uppercase mt-2 leading-none">
-          LAST UPDATED AUGUST 26, 2026 &middot; BETA V2
+          LAST UPDATED AUGUST 27, 2026 &middot; BETA V2
         </p>
       </div>
 
@@ -54,9 +54,10 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">4. AI meal planning</h2>
           <p>
-            The meal-planning feature sends your entered ingredients or macro targets to Google&apos;s
-            Gemini API to generate a recipe. This is ephemeral - nothing you generate this way is
-            saved to our database. Google processes that request under its own terms.
+            The meal-planning feature sends your entered ingredients or macro targets to
+            Anthropic&apos;s Claude API to generate a recipe. This is ephemeral - nothing you
+            generate this way is saved to our database. Anthropic processes that request under its
+            own terms.
           </p>
         </section>
 

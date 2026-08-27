@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -52,10 +52,10 @@ export async function generateAiMeal(rawData: unknown) {
     };
   }
 
-  // 2. Cooldown - real, billed Gemini API calls on a key shared with box's
-  // own tooling (see skyrise decisions log). Blocks rapid-fire abuse,
-  // whether from someone mashing the button or a script bypassing the UI
-  // entirely and calling this action directly.
+  // 2. Cooldown - real, billed Anthropic API calls on a key dedicated to
+  // droppdd. Blocks rapid-fire abuse, whether from someone mashing the
+  // button or a script bypassing the UI entirely and calling this action
+  // directly.
   const userId = session.user.id;
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -85,21 +85,21 @@ export async function generateAiMeal(rawData: unknown) {
   const input = parsedInput.data;
 
   // 4. Check for API key
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error("generateAiMeal: GEMINI_API_KEY is missing from the server environment.");
+    console.error("generateAiMeal: ANTHROPIC_API_KEY is missing from the server environment.");
     return {
       success: false,
       error: "AI ENGINE UNAVAILABLE: The meal planner is temporarily offline. Try again later.",
     };
   }
 
-  // 5. Initialize Gemini API Client
-  let genAI: GoogleGenerativeAI;
+  // 5. Initialize Anthropic API Client
+  let anthropic: Anthropic;
   try {
-    genAI = new GoogleGenerativeAI(apiKey);
+    anthropic = new Anthropic({ apiKey });
   } catch (err: unknown) {
-    console.error("Failed to initialize GoogleGenerativeAI:", err);
+    console.error("Failed to initialize Anthropic client:", err);
     return {
       success: false,
       error: "INTEGRATION ERROR: Failed to initialize generative AI service.",
@@ -191,29 +191,35 @@ Return ONLY this valid JSON object.`;
   });
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
+    const message = await anthropic.messages.create(
+      {
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
       },
-    });
+      { timeout: 25000 }
+    );
 
-    const result = await model.generateContent(prompt, { timeout: 25000 });
-    const textResponse = result.response.text();
+    const textBlock = message.content.find((block) => block.type === "text");
+    const textResponse = textBlock?.text?.trim();
 
     if (!textResponse) {
       return {
         success: false,
-        error: "GENERATION ERROR: Gemini returned an empty response.",
+        error: "GENERATION ERROR: Claude returned an empty response.",
       };
     }
 
-    // 8. Attempt to parse JSON response
+    // 8. Attempt to parse JSON response. Unlike Gemini's responseMimeType
+    // flag, Claude has no native JSON-only mode - it follows the prompt's
+    // "raw JSON only" instruction reliably, but strip an accidental
+    // markdown code fence defensively before parsing rather than assume.
+    const jsonText = textResponse.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
     let rawJson: unknown;
     try {
-      rawJson = JSON.parse(textResponse);
+      rawJson = JSON.parse(jsonText);
     } catch (parseErr) {
-      console.error("Failed to parse Gemini response text:", textResponse, parseErr);
+      console.error("Failed to parse Claude response text:", textResponse, parseErr);
       return {
         success: false,
         error: "AI ENGINE ERROR: The model returned malformed output that could not be parsed.",
@@ -223,7 +229,7 @@ Return ONLY this valid JSON object.`;
     // 9. Zod-validate the model output against the schema
     const validatedMeal = generatedMealSchema.safeParse(rawJson);
     if (!validatedMeal.success) {
-      console.error("Gemini output failed validation:", rawJson, validatedMeal.error);
+      console.error("Claude output failed validation:", rawJson, validatedMeal.error);
       return {
         success: false,
         error: "AI VALIDATION ERROR: The model output did not match the required schema constraints.",
@@ -235,7 +241,7 @@ Return ONLY this valid JSON object.`;
       meal: validatedMeal.data,
     };
   } catch (apiErr: unknown) {
-    console.error("Gemini API call failed:", apiErr);
+    console.error("Claude API call failed:", apiErr);
     const isTimeout = apiErr instanceof Error && /timeout/i.test(apiErr.message);
     return {
       success: false,
