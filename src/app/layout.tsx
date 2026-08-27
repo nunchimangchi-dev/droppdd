@@ -81,7 +81,29 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <div className="flex items-center gap-1.5 text-[10px] bg-orange-500/10 text-orange-500 font-black px-2.5 py-1.5 rounded-sm border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)] italic">
                 🔥 {currentStreak} {currentStreak === 1 ? "DAY" : "DAYS"}
               </div>
-              
+
+              <a
+                href="/why"
+                className="p-2 text-zinc-500 hover:text-orange-500 transition-colors border border-zinc-800 rounded-sm bg-zinc-900/50"
+                title="Why we built this"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.362-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.25h.007v.008H12v-.008Z" />
+                </svg>
+              </a>
+
               {session?.user && (
                 <form action={signOutAction}>
                   <button

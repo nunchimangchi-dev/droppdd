@@ -1468,3 +1468,38 @@ Confirmed via curl against a local dev server that the new copy renders
 on /signin. `npm run lint` and `npm run build` both pass. No visual
 browser check needed - copy-only change in an existing, already-styled
 element.
+
+## 2026-08-27 — /why page: the founder's-note the maintainer wanted
+
+Direct request: "a nagging intrusive thing" - a bottom-left link, similar
+to an About page, stating why droppdd was built, what makes it effective,
+the confidence that comes from actually being a real user, and a way to
+contact the maintainer.
+
+- New public route `/why` (added to proxy.ts's auth-exclusion matcher,
+  same treatment as /legal/*) - reachable without signing in, matching
+  the pattern used for legal pages rather than gating it.
+- Content reuses the already-approved beta-invite email voice almost
+  verbatim (same "we" phrasing, same OMAD-is-the-fastest-thing-that-
+  worked / wagers-are-the-fun-part / we-use-it-ourselves structure) -
+  deliberate reuse of validated messaging rather than drafting something
+  new from scratch.
+- Entry points: a small "WHY" link in the desktop sidebar's bottom-left
+  section (next to TERMINATE SESSION, visible regardless of auth state
+  since it sits outside the `{userEmail && ...}` guard), and a matching
+  icon-only link in the mobile top header next to sign-out - deliberately
+  NOT added to the mobile bottom tab bar, which is already dense (8-9
+  icons); this follows the same precedent as sign-out's own earlier move
+  out of that bar for the same reason.
+- Contact link is a plain `mailto:` to the existing admin address - no
+  new feedback infrastructure, since none exists yet and this wasn't the
+  ask.
+
+### Manual test plan
+Confirmed locally: `/why` returns `200` unauthenticated, `/` still `307`s
+- the exclusion is scoped correctly, not a blanket auth bypass. `npm run
+lint` and `npm run build` both pass. Visually confirmed the page renders
+correctly (matches the /legal/privacy prose pattern). The desktop sidebar
+link was visually confirmed too, partially obscured locally only by
+Next.js's dev-mode indicator badge (framework overlay, dev-only, not
+present in the production build) - reconfirm on prod after deploy.

@@ -273,7 +273,7 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
                 <p className="text-[9px] text-brand-text-muted/65 font-bold tracking-widest uppercase">ACTIVE OPERATOR</p>
                 <p className="text-xs font-black text-brand-text-muted truncate tracking-tight uppercase italic">{username ? `@${username}` : userEmail}</p>
               </div>
-              
+
               <form action={signOutAction} className="pt-2">
                 <button
                   type="submit"
@@ -285,6 +285,14 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
               </form>
             </div>
           )}
+
+          <Link
+            href="/why"
+            className="mt-4 w-full text-left text-[10px] font-black tracking-[0.2em] uppercase text-brand-text-muted/60 hover:text-brand-orange transition-all duration-200 flex items-center gap-2 group"
+          >
+            <span className="w-4 h-[1px] bg-brand-border group-hover:bg-brand-orange/50 transition-colors"></span>
+            WHY
+          </Link>
         </div>
       </aside>
 
