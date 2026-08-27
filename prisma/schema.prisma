@@ -94,6 +94,7 @@ model User {
   wagersChallenged Wager[]        @relation("WagerChallenged")
   progress         Progress[]
   weightRecords    WeightRecord[]
+  boardItems       BoardItem[]
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,
@@ -129,6 +130,23 @@ model Wager {
   status           String    @default("ACTIVE") // "PENDING" | "ACTIVE" | "WON" | "LOST" | "REJECTED" | "CANCELLED"
   resolvedAt       DateTime?
   createdAt        DateTime  @default(now())
+}
+
+// Self-serve feedback board: any signed-in beta user can submit a card
+// (bug, feature request, or discovery note). Status moves (NEW -> PLANNED
+// -> IN_PROGRESS -> DONE) and deletion are admin-only - a tester can flag
+// something, but only the maintainer decides where it stands, same
+// separation of concerns as the admin panel's other operator-facing pages.
+model BoardItem {
+  id          String   @id @default(cuid())
+  type        String // "BUG" | "FEATURE" | "DISCOVERY"
+  title       String
+  description String
+  status      String   @default("NEW") // "NEW" | "PLANNED" | "IN_PROGRESS" | "DONE"
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Account {

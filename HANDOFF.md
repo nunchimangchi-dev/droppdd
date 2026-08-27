@@ -1503,3 +1503,45 @@ correctly (matches the /legal/privacy prose pattern). The desktop sidebar
 link was visually confirmed too, partially obscured locally only by
 Next.js's dev-mode indicator badge (framework overlay, dev-only, not
 present in the production build) - reconfirm on prod after deploy.
+
+## 2026-08-27 — Feedback board (bugs, feature requests, discovery)
+
+Direct request, prompted by a realization mid-conversation about
+planning the Reddit outreach post: there was no actual way for testers
+to give feedback beyond the /why mailto link, which meant "how do I
+give feedback" had no real answer yet. Built a self-serve kanban-style
+board covering all three categories in one place.
+
+- New `BoardItem` model (type: BUG/FEATURE/DISCOVERY, status: NEW/
+  PLANNED/IN_PROGRESS/DONE, both plain strings with a comment
+  documenting allowed values - sqlite doesn't support native Prisma
+  enums, same pattern already used by Wager.status/metric). Purely
+  additive migration, read directly before applying.
+- New `/board` route, gated same as every other page (session +
+  terms + username). Any signed-in operator can submit a card - open
+  submission was a deliberate choice, not curated, since the whole
+  point was removing the "how do I actually tell you something" gap.
+- Status moves and deletion are admin-only (`checkAdmin()`, reused from
+  the admin panel) - a tester can flag something, but only the
+  maintainer decides where it stands or whether it gets removed. This
+  wasn't asked for explicitly but follows the same separation of
+  concerns as every other operator-facing admin control in the app.
+- Kanban is 4 static status columns (NEW/PLANNED/IN_PROGRESS/DONE), not
+  drag-and-drop - admin moves cards via a small per-card status select
+  + button. Real scope call: true DnD would need a client-side library
+  and a lot more interactivity for a 10-person beta; this gets the
+  visual/functional result without the added surface area.
+- Added "BOARD" to the main nav (visible to every signed-in user, not
+  admin-gated) - worth flagging honestly: the mobile bottom tab bar is
+  now at 9 icons (10 for admins), the densest it's been. Sign-out was
+  already relocated out of that same bar once for exactly this reason
+  earlier in the project. Not addressed here - a mobile-nav audit is a
+  separate, focused piece of work, not bundled into this feature.
+
+### Manual test plan
+Full click-through actually performed locally, not just build/lint:
+created a real card, confirmed the type badge/attribution rendered,
+moved it NEW -> IN_PROGRESS via the admin control (confirmed the count
+and column both updated), then deleted it (confirmed it's gone and the
+board returns to its empty state). `/board` correctly `307`s
+unauthenticated. `npm run build` and `npm run lint` both pass.
