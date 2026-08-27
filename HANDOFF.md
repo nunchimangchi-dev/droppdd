@@ -1443,3 +1443,28 @@ before next beta invite:
   message and no row is created.
 - Confirm an admin invite still succeeds past 10 non-admin slots (admins
   shouldn't be capped).
+
+## 2026-08-26 — /signin: Google account requirement note
+
+Follow-up from a conversation about what happens to a user without an
+existing Google account (droppdd's only auth provider, confirmed via
+src/auth.ts - `providers: [Google]`, nothing else). They aren't hard
+blocked - Google's own login screen lets you create an account against
+any existing email, not just Gmail - but it's real friction with zero
+visibility if someone bounces there, and /signin never mentioned Google
+was required until the button itself.
+
+- Added a small line above the sign-in button: "REQUIRES A GOOGLE
+  ACCOUNT - FREE TO CREATE IF YOU DON'T HAVE ONE" - sets the expectation
+  before the click instead of surprising them mid-flow.
+- Deliberately not building a second auth provider (email/password,
+  magic link) for this - genuinely disproportionate effort for a beta
+  this size where the invite audience already skews toward people with
+  a Google account. Revisit only if usage broadens past personal
+  invites.
+
+### Manual test plan
+Confirmed via curl against a local dev server that the new copy renders
+on /signin. `npm run lint` and `npm run build` both pass. No visual
+browser check needed - copy-only change in an existing, already-styled
+element.

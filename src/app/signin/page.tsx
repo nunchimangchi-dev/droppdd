@@ -61,6 +61,9 @@ export default function SignInPage() {
             <p className="text-[10px] text-brand-text-muted font-extrabold uppercase tracking-[0.2em] leading-relaxed max-w-[240px] mx-auto">
               AUTHENTICATE TO COMMENCE DAILY ASSAULT AND TRACK CONDITIONING
             </p>
+            <p className="text-[9px] text-brand-text-muted/60 font-black tracking-widest uppercase">
+              REQUIRES A GOOGLE ACCOUNT &mdash; FREE TO CREATE IF YOU DON&apos;T HAVE ONE
+            </p>
           </div>
 
           <form
