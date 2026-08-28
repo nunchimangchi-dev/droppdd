@@ -13,7 +13,7 @@ Admin accounts don't count against the cap.
 - **1 / 10 beta slots used**
 - **3 total allowlisted accounts** (1 owner/admin, 1 admin, 1 member)
 - **1 public outreach post** live (Reddit)
-- **3 mod permission requests** sent, awaiting response (r/keto, r/omadketo, r/omad)
+- **3 mod permission requests** sent: 1 declined (r/omad), 2 awaiting response (r/keto, r/omadketo)
 
 ## Personal invites
 
@@ -40,7 +40,7 @@ mod to try it themselves.
 |---|---|---|---|
 | 2026-08-27 | r/omadketo | Requested | First version sent (before the "free"/"capped at 10" additions were folded in) |
 | 2026-08-27 | r/keto | Requested | Sent with the fuller message (free, capped at 10 included) |
-| 2026-08-27 | r/omad | Requested | Sent with the fuller message (free, capped at 10 included) |
+| 2026-08-27 | r/omad | **Declined** | Mod replied same day: sub is oversaturated with app beta-test/promo/launch requests and has stopped accepting them entirely, including OMAD/keto apps specifically. Polite, general policy - not specific to droppdd. Do not post there. |
 
 ## Backlog / considered, not yet posted
 
