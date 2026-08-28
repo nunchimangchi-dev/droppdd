@@ -13,6 +13,7 @@ Admin accounts don't count against the cap.
 - **1 / 10 beta slots used**
 - **3 total allowlisted accounts** (1 owner/admin, 1 admin, 1 member)
 - **1 public outreach post** live (Reddit)
+- **3 mod permission requests** sent, awaiting response (r/keto, r/omadketo, r/omad)
 
 ## Personal invites
 
@@ -27,9 +28,22 @@ Admin accounts don't count against the cap.
 |---|---|---|---|---|
 | 2026-08-27 | Reddit | r/AlphaAndBetaUsers | Posted | Tagged Beta. Exact post URL not recorded here yet — add it when handy so replies/comments are easy to check back on. |
 
+## Mod permission requests (pending)
+
+Self-promo rules in these communities aren't fully documented publicly,
+so the approach was: ask mods directly, transparently, before posting -
+not post first and hope. Message emphasized: free, capped at 10 beta
+slots, wagers are honor-system (not money), and an invitation for the
+mod to try it themselves.
+
+| Date | Community | Status | Notes |
+|---|---|---|---|
+| 2026-08-27 | r/omadketo | Requested | First version sent (before the "free"/"capped at 10" additions were folded in) |
+| 2026-08-27 | r/keto | Requested | Sent with the fuller message (free, capped at 10 included) |
+| 2026-08-27 | r/omad | Requested | Sent with the fuller message (free, capped at 10 included) |
+
 ## Backlog / considered, not yet posted
 
-- r/OMAD (~97.5k members) — most precisely on-target audience for long-term retention; hold until there's a real wager-pair story to point to.
 - r/IMadeThis — general maker-showcase, broader/less targeted reach; conflicting subscriber-count data found (28k-440k depending on source), not verified.
 
 ## How to update this log
