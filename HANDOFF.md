@@ -1740,3 +1740,18 @@ counter goes green at the threshold, confirm streak only advances when
 all three areas are met, claim a Rest Day and confirm it's blocked on a
 second attempt the same week, confirm optional weight still updates
 Progress/WeightRecord when provided.
+
+## 2026-08-29 — Follow-up: check-in validation bug found during live testing
+
+The real click-through test on droppdd-prod (not just build/lint) caught
+a genuine bug the build couldn't: every check-in submission with at
+least one unchecked box - i.e. every real submission - was rejected with
+"something didn't look right." `formData.get()` returns `null` for an
+unchecked checkbox, not `undefined`, and Zod's `.optional()` only allows
+`undefined`. Added `.nullable()` to every checkbox/optional field in
+`checkInSchema`. Confirmed fixed with a second full live pass: checked 3
+strength boxes + movement + eating, submitted, verified the exact row in
+the production database directly (not just trusted the UI), confirmed
+the streak computed to 1, confirmed the dashboard reflected it, and
+confirmed reloading /checkin correctly pre-filled today's saved state
+for correction.
