@@ -120,7 +120,7 @@ export async function createWorkout(rawData: unknown) {
   });
 
   revalidatePath("/admin/workouts");
-  revalidatePath("/workouts");
+  revalidatePath("/attack");
   redirect("/admin/workouts?success=created");
 }
 
@@ -197,8 +197,7 @@ export async function updateWorkout(id: string, rawData: unknown) {
   });
 
   revalidatePath("/admin/workouts");
-  revalidatePath("/workouts");
-  revalidatePath(`/workouts/${newId}`);
+  revalidatePath("/attack");
   redirect("/admin/workouts?success=updated");
 }
 
@@ -224,7 +223,7 @@ export async function deleteWorkout(id: string) {
   });
 
   revalidatePath("/admin/workouts");
-  revalidatePath("/workouts");
+  revalidatePath("/attack");
   redirect("/admin/workouts?success=deleted");
 }
 

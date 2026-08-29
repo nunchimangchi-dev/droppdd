@@ -5,14 +5,39 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { isSameCalendarDay, isNextCalendarDay } from "@/lib/streak";
+import { isSameCalendarDay } from "@/lib/streak";
+import { computeCurrentStreak, isRestDayEligible } from "@/lib/checkin";
 
 const checkInSchema = z.object({
-  weight: z.coerce.number().positive(),
-  weightUnit: z.enum(["LBS", "KG"]),
+  strengthPushups: z.literal("on").optional(),
+  strengthSitups: z.literal("on").optional(),
+  strengthPullups: z.literal("on").optional(),
+  strengthFloorPress: z.literal("on").optional(),
+  strengthFloorOverhead: z.literal("on").optional(),
+  strengthPlanks: z.literal("on").optional(),
+  movementMet: z.literal("on").optional(),
+  eatingMet: z.literal("on").optional(),
+  weight: z.coerce.number().positive().optional(),
+  weightUnit: z.enum(["LBS", "KG"]).optional(),
 });
 
 const KG_TO_LBS = 2.20462;
+
+async function recomputeAndSaveStreak(userId: string) {
+  const progress = await prisma.progress.findFirst({ where: { userId } });
+  if (!progress) return;
+
+  const checkIns = await prisma.dailyCheckIn.findMany({ where: { userId } });
+  const newStreak = computeCurrentStreak(checkIns);
+
+  await prisma.progress.update({
+    where: { id: progress.id },
+    data: {
+      currentStreak: newStreak,
+      bestStreak: Math.max(progress.bestStreak, newStreak),
+    },
+  });
+}
 
 export async function checkIn(formData: FormData) {
   const session = await auth();
@@ -27,47 +52,130 @@ export async function checkIn(formData: FormData) {
   }
 
   const parsed = checkInSchema.safeParse({
-    weight: formData.get("weight"),
-    weightUnit: formData.get("weightUnit"),
+    strengthPushups: formData.get("strengthPushups"),
+    strengthSitups: formData.get("strengthSitups"),
+    strengthPullups: formData.get("strengthPullups"),
+    strengthFloorPress: formData.get("strengthFloorPress"),
+    strengthFloorOverhead: formData.get("strengthFloorOverhead"),
+    strengthPlanks: formData.get("strengthPlanks"),
+    movementMet: formData.get("movementMet"),
+    eatingMet: formData.get("eatingMet"),
+    weight: formData.get("weight") || undefined,
+    weightUnit: formData.get("weightUnit") || undefined,
   });
   if (!parsed.success) {
-    redirect("/checkin?error=invalid-weight");
+    redirect("/checkin?error=invalid-entry");
   }
 
-  const weightLbs = parsed.data.weightUnit === "KG" ? parsed.data.weight * KG_TO_LBS : parsed.data.weight;
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  const d = parsed.data;
+  const strengthFlags = {
+    strengthPushups: d.strengthPushups === "on",
+    strengthSitups: d.strengthSitups === "on",
+    strengthPullups: d.strengthPullups === "on",
+    strengthFloorPress: d.strengthFloorPress === "on",
+    strengthFloorOverhead: d.strengthFloorOverhead === "on",
+    strengthPlanks: d.strengthPlanks === "on",
+  };
+  const movementMet = d.movementMet === "on";
+  const eatingMet = d.eatingMet === "on";
 
-  const lastRecord = await prisma.weightRecord.findFirst({
+  const now = new Date();
+
+  // Same-day dedupe: correcting today's entry updates it in place rather
+  // than creating a second row for the same day.
+  const mostRecent = await prisma.dailyCheckIn.findFirst({
     where: { userId },
-    orderBy: { recordedAt: "desc" },
+    orderBy: { checkInDate: "desc" },
   });
 
-  let newStreak = progress.currentStreak;
-
-  if (lastRecord && isSameCalendarDay(lastRecord.recordedAt, now)) {
-    // Already checked in today - correct today's entry, streak unchanged.
-    await prisma.weightRecord.update({
-      where: { id: lastRecord.id },
-      data: { weight: weightLbs, date: dateStr },
+  if (mostRecent && isSameCalendarDay(mostRecent.checkInDate, now)) {
+    await prisma.dailyCheckIn.update({
+      where: { id: mostRecent.id },
+      data: { ...strengthFlags, movementMet, eatingMet },
     });
   } else {
-    await prisma.weightRecord.create({
-      data: { userId, date: dateStr, recordedAt: now, weight: weightLbs },
+    await prisma.dailyCheckIn.create({
+      data: { userId, checkInDate: now, ...strengthFlags, movementMet, eatingMet },
     });
-    newStreak = lastRecord && isNextCalendarDay(lastRecord.recordedAt, now)
-      ? progress.currentStreak + 1
-      : 1; // no prior record, or a gap - streak (re)starts at 1
   }
 
-  await prisma.progress.update({
-    where: { id: progress.id },
-    data: {
-      currentWeight: weightLbs,
-      currentStreak: newStreak,
-      bestStreak: Math.max(progress.bestStreak, newStreak),
-    },
+  // Weight logging is optional now - WeightRecord/Progress.currentWeight
+  // only update if a value was actually provided.
+  if (d.weight !== undefined && d.weightUnit) {
+    const weightLbs = d.weightUnit === "KG" ? d.weight * KG_TO_LBS : d.weight;
+    const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+
+    const lastWeight = await prisma.weightRecord.findFirst({
+      where: { userId },
+      orderBy: { recordedAt: "desc" },
+    });
+
+    if (lastWeight && isSameCalendarDay(lastWeight.recordedAt, now)) {
+      await prisma.weightRecord.update({
+        where: { id: lastWeight.id },
+        data: { weight: weightLbs, date: dateStr },
+      });
+    } else {
+      await prisma.weightRecord.create({
+        data: { userId, date: dateStr, recordedAt: now, weight: weightLbs },
+      });
+    }
+
+    await prisma.progress.update({
+      where: { id: progress.id },
+      data: { currentWeight: weightLbs },
+    });
+  }
+
+  await recomputeAndSaveStreak(userId);
+
+  revalidatePath("/");
+  revalidatePath("/progress");
+  revalidatePath("/checkin");
+  redirect("/?checkin=success");
+}
+
+export async function takeRestDay() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+  const userId = session.user.id;
+
+  const progress = await prisma.progress.findFirst({ where: { userId } });
+  if (!progress) {
+    redirect("/onboarding");
+  }
+
+  const now = new Date();
+
+  // Re-checked server-side, not just hidden in the UI - the eligibility
+  // gate is enforced here regardless of what the client shows.
+  const lastRestDay = await prisma.dailyCheckIn.findFirst({
+    where: { userId, restDay: true },
+    orderBy: { checkInDate: "desc" },
   });
+  if (!isRestDayEligible(lastRestDay?.checkInDate ?? null, now)) {
+    redirect("/checkin?error=rest-day-not-eligible");
+  }
+
+  const mostRecent = await prisma.dailyCheckIn.findFirst({
+    where: { userId },
+    orderBy: { checkInDate: "desc" },
+  });
+
+  if (mostRecent && isSameCalendarDay(mostRecent.checkInDate, now)) {
+    await prisma.dailyCheckIn.update({
+      where: { id: mostRecent.id },
+      data: { restDay: true },
+    });
+  } else {
+    await prisma.dailyCheckIn.create({
+      data: { userId, checkInDate: now, restDay: true },
+    });
+  }
+
+  await recomputeAndSaveStreak(userId);
 
   revalidatePath("/");
   revalidatePath("/progress");

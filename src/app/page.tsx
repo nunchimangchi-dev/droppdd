@@ -199,11 +199,11 @@ export default async function Dashboard() {
 
           <div className="relative z-10 mt-8 pt-4">
             <Link
-              href={`/workouts/${wod.id}`}
+              href="/attack"
               className="btn-assault inline-flex w-full sm:w-auto"
             >
               <span className="inline-flex items-center">
-                ENGAGE WORKOUT
+                VIEW THE ATTACK
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"

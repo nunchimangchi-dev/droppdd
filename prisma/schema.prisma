@@ -96,6 +96,7 @@ model User {
   weightRecords    WeightRecord[]
   boardItems       BoardItem[]
   inviteRequests   InviteRequest[]
+  dailyCheckIns    DailyCheckIn[]
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,
@@ -163,6 +164,36 @@ model InviteRequest {
   invitedById   String
   invitedBy     User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
+}
+
+// Replaces WeightRecord as the primary daily check-in vehicle. Weight
+// logging stays on WeightRecord (untouched) and is now optional - this
+// model is what actually drives the streak. Strength is 6 self-reported
+// booleans rather than one "did strength" flag on purpose: it's real data
+// for the planned AI workout-assist feature later ("I only have
+// dumbbells, what should I skip?"), and self-report today doesn't block
+// swapping in real tracking later - the boolean semantics (goal met
+// today) are what any future automatic integration would also compute.
+model DailyCheckIn {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkInDate           DateTime @default(now())
+  strengthPushups       Boolean  @default(false)
+  strengthSitups        Boolean  @default(false)
+  strengthPullups       Boolean  @default(false)
+  strengthFloorPress    Boolean  @default(false)
+  strengthFloorOverhead Boolean  @default(false)
+  strengthPlanks        Boolean  @default(false)
+  movementMet           Boolean  @default(false)
+  eatingMet             Boolean  @default(false)
+  // A floating once-every-7-days pass - satisfies the streak for the day
+  // without requiring strength/movement/eating. Not tied to a fixed
+  // calendar day (e.g. always Sunday) - eligibility is computed from the
+  // most recent restDay row, not a day-of-week check.
+  restDay               Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model Account {

@@ -2,10 +2,18 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isSameCalendarDay } from "@/lib/streak";
-import { checkIn } from "./actions";
+import {
+  STRENGTH_EXERCISES,
+  STRENGTH_THRESHOLD,
+  REST_DAY_INTERVAL_DAYS,
+  countStrengthCompleted,
+  isRestDayEligible,
+} from "@/lib/checkin";
+import { checkIn, takeRestDay } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-weight": "Enter a valid positive weight.",
+  "invalid-entry": "Something on that submission didn't look right - try again.",
+  "rest-day-not-eligible": `Rest Day is a once-every-${REST_DAY_INTERVAL_DAYS}-days pass - not available yet.`,
 };
 
 export default async function CheckInPage({
@@ -30,13 +38,23 @@ export default async function CheckInPage({
     redirect("/onboarding");
   }
 
-  const lastRecord = await prisma.weightRecord.findFirst({
+  const now = new Date();
+
+  const mostRecent = await prisma.dailyCheckIn.findFirst({
     where: { userId },
-    orderBy: { recordedAt: "desc" },
+    orderBy: { checkInDate: "desc" },
   });
-  const checkedInToday = lastRecord ? isSameCalendarDay(lastRecord.recordedAt, new Date()) : false;
+  const todayCheckIn = mostRecent && isSameCalendarDay(mostRecent.checkInDate, now) ? mostRecent : null;
+
+  const lastRestDay = await prisma.dailyCheckIn.findFirst({
+    where: { userId, restDay: true },
+    orderBy: { checkInDate: "desc" },
+  });
+  const restDayEligible = isRestDayEligible(lastRestDay?.checkInDate ?? null, now) && !todayCheckIn?.restDay;
 
   const { error } = await searchParams;
+
+  const strengthCompleted = todayCheckIn ? countStrengthCompleted(todayCheckIn) : 0;
 
   return (
     <div className="space-y-8 animate-fade-in max-w-xl mx-auto">
@@ -45,7 +63,7 @@ export default async function CheckInPage({
           DAILY <span className="text-brand-orange">CHECK-IN</span>
         </h1>
         <p className="text-brand-text-muted text-xs font-black tracking-[0.3em] uppercase mt-2 leading-none">
-          LOG TODAY&apos;S WEIGHT. KEEP THE STREAK ALIVE.
+          THREE GREEN CHECKS KEEP THE STREAK ALIVE.
         </p>
       </div>
 
@@ -71,53 +89,154 @@ export default async function CheckInPage({
         </div>
       </div>
 
-      <div className="panel-aggressive relative">
-        <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
-        <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-6 flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-brand-orange block" />
-          {checkedInToday ? "UPDATE TODAY'S ENTRY" : "LOG TODAY'S WEIGHT"}
-        </h2>
-
-        {checkedInToday && (
-          <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-wide mb-4">
-            You already checked in today - submitting again corrects today&apos;s entry, it won&apos;t
-            double-count your streak.
+      {todayCheckIn?.restDay ? (
+        <div className="panel-aggressive border-brand-safe/50 text-center space-y-2">
+          <span className="text-3xl">✅</span>
+          <p className="text-sm font-black text-brand-safe uppercase tracking-wide">
+            REST DAY LOCKED IN FOR TODAY
           </p>
-        )}
+          <p className="text-[10px] text-brand-text-muted uppercase font-bold">
+            Next one opens up in {REST_DAY_INTERVAL_DAYS} days.
+          </p>
+        </div>
+      ) : (
+        <form action={checkIn} className="panel-aggressive relative space-y-8">
+          <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
 
-        <form action={checkIn} className="space-y-5">
-          <div>
-            <label className="block label-micro mb-1.5">WEIGHT</label>
-            <input
-              type="number"
-              step="0.1"
-              name="weight"
-              required
-              defaultValue={progress.currentWeight}
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
-            />
+          {/* Strength */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-brand-orange block" />
+                STRENGTH
+              </h2>
+              <span
+                className={`text-[10px] font-black uppercase px-2 py-1 border ${
+                  strengthCompleted >= STRENGTH_THRESHOLD
+                    ? "bg-brand-safe/10 text-brand-safe border-brand-safe/30"
+                    : "bg-brand-bg text-brand-text-muted border-brand-border"
+                }`}
+              >
+                {strengthCompleted} / {STRENGTH_EXERCISES.length} &middot; NEED {STRENGTH_THRESHOLD}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {STRENGTH_EXERCISES.map((ex) => (
+                <label
+                  key={ex.field}
+                  className="flex items-center gap-3 bg-brand-bg/50 border border-brand-border p-3 cursor-pointer hover:border-brand-border-strong"
+                >
+                  <input
+                    type="checkbox"
+                    name={ex.field}
+                    defaultChecked={todayCheckIn ? Boolean(todayCheckIn[ex.field]) : false}
+                    className="w-4 h-4 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-xs font-bold text-brand-text uppercase">
+                    {ex.label}
+                    <span className="block text-[9px] text-brand-text-muted font-black tracking-wide">
+                      {ex.sets} × {ex.reps}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="block label-micro mb-1.5">UNIT</label>
-            <select
-              name="weightUnit"
-              required
-              defaultValue="LBS"
-              className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-3 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer"
-            >
-              <option value="LBS">Pounds (lbs)</option>
-              <option value="KG">Kilograms (kg)</option>
-            </select>
+          {/* Movement */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+              <span className="w-1.5 h-5 bg-brand-orange block" />
+              MOVEMENT
+            </h2>
+            <label className="flex items-center gap-3 bg-brand-bg/50 border border-brand-border p-4 cursor-pointer hover:border-brand-border-strong">
+              <input
+                type="checkbox"
+                name="movementMet"
+                defaultChecked={todayCheckIn?.movementMet ?? false}
+                className="w-5 h-5 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+              />
+              <span className="text-xs font-bold text-brand-text uppercase">
+                10,000+ steps today (walking, running, swimming, biking - whatever gets you moving counts)
+              </span>
+            </label>
           </div>
 
-          <div className="pt-2">
-            <button type="submit" className="btn-assault w-full">
-              <span>{checkedInToday ? "UPDATE ENTRY" : "LOCK IN CHECK-IN"}</span>
-            </button>
+          {/* Eating */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+              <span className="w-1.5 h-5 bg-brand-orange block" />
+              EATING
+            </h2>
+            <label className="flex items-center gap-3 bg-brand-bg/50 border border-brand-border p-4 cursor-pointer hover:border-brand-border-strong">
+              <input
+                type="checkbox"
+                name="eatingMet"
+                defaultChecked={todayCheckIn?.eatingMet ?? false}
+                className="w-5 h-5 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+              />
+              <span className="text-xs font-bold text-brand-text uppercase">
+                Ate within my OMAD window today
+              </span>
+            </label>
           </div>
+
+          {/* Weight - optional */}
+          <div className="space-y-3 border-t-2 border-dashed border-brand-border pt-6">
+            <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+              <span className="w-1.5 h-5 bg-brand-border block" />
+              WEIGHT <span className="text-brand-text-muted/60 normal-case font-bold">(optional)</span>
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                step="0.1"
+                name="weight"
+                placeholder={String(progress.currentWeight)}
+                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0"
+              />
+              <select
+                name="weightUnit"
+                defaultValue="LBS"
+                className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange rounded-none px-3 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 cursor-pointer"
+              >
+                <option value="LBS">Pounds (lbs)</option>
+                <option value="KG">Kilograms (kg)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" className="btn-assault w-full">
+            <span>{todayCheckIn ? "UPDATE TODAY'S CHECK-IN" : "LOCK IN CHECK-IN"}</span>
+          </button>
         </form>
-      </div>
+      )}
+
+      {/* Rest Day */}
+      {!todayCheckIn?.restDay && (
+        <div className="panel-aggressive border-brand-border/60 text-center space-y-3">
+          <p className="text-xs font-black text-brand-text-muted uppercase tracking-wide">
+            Not feeling it today?
+          </p>
+          {restDayEligible ? (
+            <form action={takeRestDay}>
+              <button
+                type="submit"
+                className="text-[10px] font-black tracking-[0.15em] uppercase px-4 py-3 bg-transparent text-brand-orange border border-brand-orange/30 hover:bg-brand-orange hover:text-black transition-colors cursor-pointer"
+              >
+                TAKE A REST DAY
+              </button>
+              <p className="text-[9px] text-brand-text-muted mt-2 uppercase font-bold">
+                One floating pass every {REST_DAY_INTERVAL_DAYS} days - still keeps your streak.
+              </p>
+            </form>
+          ) : (
+            <p className="text-[10px] text-brand-text-muted uppercase font-bold tracking-wide">
+              Rest Day already used recently - back in rotation every {REST_DAY_INTERVAL_DAYS} days.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -70,8 +70,8 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
       ),
     },
     {
-      label: "WORKOUTS",
-      href: "/workouts",
+      label: "ATTACK",
+      href: "/attack",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

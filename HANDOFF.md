@@ -1665,3 +1665,78 @@ placement that actually has a real trigger behind it.
 authorize pre-fills correctly, dismiss removes it) needs to happen on
 droppdd-prod after deploy - no authenticated local session available to
 test this flow end to end before then.
+
+## 2026-08-29 — The Attack + redesigned Check-In (Strength/Movement/Eating)
+
+Real product redesign, worked through as a design conversation with the
+maintainer before any code - the "no gym membership required" pitch
+turned out not to hold up against the actual workout catalog (3 of 4
+existing workouts assumed a barbell, kettlebell, or an assault bike),
+which led to rethinking what Check-In and Workouts actually are instead
+of just writing marketing copy that didn't match the product.
+
+**The new mental model:** Attack (what to do - a fixed, gym-free
+prescription) + Meals (what to eat) + Check-In (did you comply) +
+Progress (how's it going). Three pillars, not a browsable catalog.
+
+- **New `DailyCheckIn` model** - 6 self-reported strength booleans
+  (pushups/sit-ups/pull-ups/floor press/floor overhead press/planks),
+  `movementMet`, `eatingMet`, `restDay`. Deliberately boolean/self-report
+  today rather than raw step counts etc. - the maintainer's own framing
+  was "don't paint us into a corner": a future real pedometer/HealthKit
+  integration would set the exact same boolean, so self-report now
+  doesn't block automation later. `WeightRecord` is untouched; weight
+  logging is now optional and lives alongside the three checks rather
+  than being the only thing check-in tracked.
+- **Strength = any 3 of 6 exercises complete.** Streak = consecutive days
+  where Strength + Movement + Eating are *all* met, or a claimed Rest
+  Day. This is stricter than the old "any check-in counts" streak -
+  confirmed explicitly with the maintainer before building, since it
+  also feeds the STREAK_TARGET wager metric.
+- **Rest Day**: a floating once-every-7-days pass, not tied to a fixed
+  calendar day - eligibility computed from the most recent claimed rest
+  day, re-verified server-side (not just hidden client-side) in
+  `takeRestDay`.
+- **Streak is recomputed from full `DailyCheckIn` history on every
+  submission**, not incrementally maintained - avoids "did I already
+  count today" edge cases entirely (e.g. correcting an earlier same-day
+  entry) at the cost of a few extra reads, which is free at this scale.
+- **`/workouts` renamed to `/attack` and re-scoped** from "browse 4 gym
+  workout templates, click one, track sets" to a single fixed reference
+  page (Strength Protocol, DB-backed via the existing `Workout`/
+  `Exercise` tables and still editable via `/admin/workouts` - and
+  Movement Protocol, static guideline copy since "10,000+ steps, or
+  swap for running/swimming/cycling" isn't exercise-shaped data).
+  `/workouts/[id]` and `WorkoutTracker.tsx` deleted outright rather than
+  left dangling - there's no per-workout detail page anymore, and this
+  also retires the one known gap where set-completion never persisted
+  (see the exercise-logging-deferred memory, now resolved differently
+  than expected: not by adding persistence, by removing the surface
+  that needed it).
+- **Catalog content replaced, not wiped via seed.ts**:
+  `prisma/replace-workouts-with-attack-protocol.ts` deletes the 4 old
+  gym workouts by known id (not a blanket deleteMany) and upserts the
+  new home-equipment-only Strength Protocol - same safe, idempotent,
+  non-destructive pattern as `add-vegetarian-meal.ts`.
+- Noted, not built this pass: an AI assist on Attack ("I have a jump
+  rope, where does it fit," "I only have dumbbells, want abs focus") -
+  same treatment the AI meal planner got as its own phase. Real feature,
+  deliberately out of scope here given how much is already in this one.
+- Fixed two stale references caught while making this change: the
+  dashboard's WOD card linked to `/workouts/${id}` (would have 404'd),
+  and `catalog-actions.ts`'s workout CRUD actions revalidated the old
+  `/workouts` paths instead of `/attack`.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass (a stale `.next` type-cache
+had to be cleared once after deleting the old routes - a real Next.js
+artifact, not a code bug). Local smoke test confirmed `/attack` and
+`/checkin` still gate correctly. `replace-workouts-with-attack-protocol.ts`
+run successfully against local dev DB (removed 4 old rows, upserted 1
+new one). No authenticated local session available to click through
+Strength/Movement/Eating/Rest-Day end to end before deploy - needs a
+real pass on droppdd-prod: complete 3+ strength boxes and confirm the
+counter goes green at the threshold, confirm streak only advances when
+all three areas are met, claim a Rest Day and confirm it's blocked on a
+second attempt the same week, confirm optional weight still updates
+Progress/WeightRecord when provided.
