@@ -1589,3 +1589,41 @@ round-trip test (actual API call, not just build/lint) still needed
 once ANTHROPIC_API_KEY is live on droppdd-prod - generate a meal via
 both entry points (pantry-driven and macro-driven), confirm the
 returned JSON passes the existing Zod schema and renders correctly.
+
+## 2026-08-29 — Fix: generated recipe rendered in a narrow strip
+
+Real bug filed on the new feedback board by the maintainer: the AI meal
+planner's output rendered inside the same narrow 1/3-width column as the
+input form, cramping a full recipe (title, macros, ingredients,
+instructions, sometimes a grocery list) into a strip barely a third of
+the page. Requested fix: it should display over the top of the static
+meal catalog instead.
+
+- Split the old single `AiMealPlanner.tsx` into `MealsInteractive.tsx`,
+  a client component that owns the page's full interactive layout (not
+  just the AI panel) - state (`generatedMeal`/`isLoading`/`error`) had
+  to move up a level so both the full-width result zone and the narrow
+  form could react to it; a Server Component (`page.tsx`) can't hold
+  that state itself, so it now just fetches `meals` and passes them
+  down as a prop.
+- The result (and its loading/error states) now render full-width,
+  directly above the static "Established Bulletproof Feasts" grid -
+  the freshest, most relevant thing on the page gets top billing
+  instead of being squeezed into a sidebar. The AI panel's own column
+  is now form-only.
+- Old `AiMealPlanner.tsx` deleted rather than left dangling - confirmed
+  via grep it was only ever imported from `meals/page.tsx` before
+  removing it.
+- No markup was rewritten from scratch - every card/section (static
+  meal cards, the generated-result card, loading skeleton, error panel)
+  is the exact same JSX moved to a new position, so this is a layout
+  fix, not a redesign.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass, TypeScript typed the new
+`meals: Meal[]` prop correctly against the generated Prisma client type.
+Local dev has no AI API key (same as every other AI-feature check this
+project), so the actual generated-result rendering needs verifying live
+on droppdd-prod after deploy - confirm width, confirm loading skeleton
+appears full-width during generation, confirm the static catalog list
+still renders correctly with no regression.
