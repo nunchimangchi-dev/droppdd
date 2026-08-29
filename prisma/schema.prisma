@@ -95,6 +95,7 @@ model User {
   progress         Progress[]
   weightRecords    WeightRecord[]
   boardItems       BoardItem[]
+  inviteRequests   InviteRequest[]
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,
@@ -147,6 +148,21 @@ model BoardItem {
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Lightweight lead capture, not real invite automation - a signed-in
+// user hits this specifically when they try to challenge a username that
+// doesn't exist yet (the highest-intent moment for inviting someone: they
+// already tried). Admins see the pending list on /admin and manually
+// provision + email the person out of band - no auto-send, no new email
+// infrastructure.
+model InviteRequest {
+  id            String   @id @default(cuid())
+  email         String
+  note          String? // e.g. the callsign they originally tried to challenge
+  invitedById   String
+  invitedBy     User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
 }
 
 model Account {

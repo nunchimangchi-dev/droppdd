@@ -1627,3 +1627,41 @@ project), so the actual generated-result rendering needs verifying live
 on droppdd-prod after deploy - confirm width, confirm loading skeleton
 appears full-width during generation, confirm the static catalog list
 still renders correctly with no regression.
+
+## 2026-08-29 — Wager-flow invite request (lightweight lead capture)
+
+Second item off the feedback board, discussed as a design question first
+rather than built blind: "Invite link for members to invite people to
+join." Explicit design call made with the maintainer before writing any
+code - contextual placement only (inside the wager peer-challenge flow,
+at the exact moment someone tries to challenge a username that doesn't
+exist), not a persistent always-visible button. Reasoning: a CTA at the
+moment of felt need converts on intent already formed ("I just tried and
+couldn't"); an ambient always-there button has no attached motivation and
+becomes background chrome fast. Deliberately not building the always-on
+version at all, not even as a secondary surface - avoids diluting the one
+placement that actually has a real trigger behind it.
+
+- New `InviteRequest` model (email, optional note, invitedById) - pure
+  lead capture, not real invite automation. No email gets sent from the
+  app at all. Purely additive migration, read directly before applying.
+- `/wagers`: when `createWager` returns `user-not-found` (the challenged
+  username doesn't exist), an inline panel appears right there - "@x
+  isn't on droppdd yet. Know their email? Invite them." - not a separate
+  page, stays in context. The attempted username is captured as the
+  request's `note` automatically.
+- `/admin`: new "Pending Invite Requests" section above the existing
+  allowlist form. AUTHORIZE jumps to and pre-fills the existing
+  "Provision New Operator" email field (via a `?email=` query param +
+  `defaultValue`, same echo pattern already used elsewhere) - deliberately
+  NOT auto-wired to actually add them, so authorizing is still a distinct,
+  reviewed action. DISMISS deletes the request once handled (or declined).
+- Basic dedupe on email so repeated attempts don't pile up duplicate rows.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass. Local smoke test confirmed
+`/wagers` and `/admin` both still `307` unauthenticated. Full click-through
+(trigger user-not-found, submit an invite, confirm it appears on /admin,
+authorize pre-fills correctly, dismiss removes it) needs to happen on
+droppdd-prod after deploy - no authenticated local session available to
+test this flow end to end before then.

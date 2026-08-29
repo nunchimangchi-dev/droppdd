@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { evaluateWager, formatMetricValue } from "@/lib/wagers";
-import { createWager } from "./actions";
+import { createWager, submitInviteRequest } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "no-progress": "Log some progress first — a wager needs a starting point to measure against.",
@@ -14,10 +14,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   "user-not-found": "No operator found with that callsign.",
   "self-challenge": "You can't challenge yourself.",
   "invalid-challenge": "That challenge isn't yours to respond to, or it's already been resolved.",
+  "invalid-invite-email": "That doesn't look like a valid email address.",
+};
+
+const SUCCESS_MESSAGES: Record<string, string> = {
+  "invite-sent": "Got it — the maintainer will reach out to them directly.",
 };
 
 type SearchParams = {
   error?: string;
+  success?: string;
   title?: string;
   metric?: string;
   targetValue?: string;
@@ -43,7 +49,7 @@ export default async function WagersPage({
   }
   const userId = session.user.id;
   const sp = await searchParams;
-  const { error } = sp;
+  const { error, success } = sp;
 
   const progress = await prisma.progress.findFirst({ where: { userId } });
 
@@ -114,10 +120,51 @@ export default async function WagersPage({
         </p>
       </div>
 
+      {success && (
+        <div className="bg-brand-safe/10 border-2 border-brand-safe text-brand-safe text-xs font-black p-4 rounded-none uppercase tracking-wider flex items-center gap-3">
+          <span className="text-xl">✅</span>
+          <span>{SUCCESS_MESSAGES[success] ?? "Done."}</span>
+        </div>
+      )}
+
       {error && (
         <div className="bg-brand-danger/10 border-2 border-brand-danger text-brand-danger text-xs font-black p-4 rounded-none uppercase tracking-wider flex items-center gap-3">
           <span className="text-xl">⚠️</span>
           <span>{ERROR_MESSAGES[error] ?? "Something went wrong."}</span>
+        </div>
+      )}
+
+      {/* Highest-intent moment for an invite: they just tried to
+          challenge a specific person and found out that person isn't on
+          droppdd yet. Contextual, not a persistent nav item - see
+          skyrise decisions log for why that placement was chosen. */}
+      {error === "user-not-found" && (
+        <div className="panel-aggressive border-brand-orange/50 space-y-3">
+          <p className="text-xs font-black text-brand-text uppercase tracking-wide">
+            {sp.challengeUsername ? (
+              <>@{sp.challengeUsername} isn&apos;t on droppdd yet.</>
+            ) : (
+              <>They&apos;re not on droppdd yet.</>
+            )}{" "}
+            <span className="text-brand-orange">Know their email? Invite them.</span>
+          </p>
+          <form action={submitInviteRequest} className="flex flex-col sm:flex-row gap-3">
+            <input type="hidden" name="note" value={sp.challengeUsername ? `Tried to challenge @${sp.challengeUsername}` : ""} />
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="their@email.com"
+              className="flex-1 bg-brand-bg border border-brand-border focus:border-brand-orange rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 font-bold tracking-wide focus:outline-none focus:ring-0"
+            />
+            <button type="submit" className="btn-assault whitespace-nowrap">
+              <span>SEND INVITE</span>
+            </button>
+          </form>
+          <p className="text-[10px] text-brand-text-muted uppercase font-bold tracking-wide">
+            This doesn&apos;t email them automatically - the maintainer reaches out directly and
+            gets them set up.
+          </p>
         </div>
       )}
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { addAllowedEmail, toggleAdminStatus, removeAllowedEmail } from "./actions";
+import { addAllowedEmail, toggleAdminStatus, removeAllowedEmail, dismissInviteRequest } from "./actions";
 import { BETA_USER_LIMIT } from "@/lib/beta-limit";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -18,12 +18,13 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   "added": "Email address successfully added to allowlist.",
   "removed": "Email address successfully removed from allowlist.",
   "toggled": "Admin status successfully updated.",
+  "invite-dismissed": "Invite request dismissed.",
 };
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ error?: string; success?: string; email?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -46,7 +47,7 @@ export default async function AdminPage({
     redirect("/");
   }
 
-  const { error, success } = await searchParams;
+  const { error, success, email: prefillEmail } = await searchParams;
   const currentUserEmail = session.user.email;
 
   // Retrieve all operators on the allowlist, sorted by id
@@ -55,6 +56,11 @@ export default async function AdminPage({
   });
 
   const betaSlotsUsed = allowedEmails.filter((e) => !e.isAdmin).length;
+
+  const inviteRequests = await prisma.inviteRequest.findMany({
+    include: { invitedBy: { select: { username: true } } },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -134,8 +140,55 @@ export default async function AdminPage({
         </Link>
       </div>
 
+      {/* Pending invite requests - lead capture from the wager peer-challenge
+          flow, not real invite automation. Admin manually authorizes +
+          reaches out out of band. */}
+      {inviteRequests.length > 0 && (
+        <div className="panel-aggressive border-brand-orange/50">
+          <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-brand-orange block" />
+            PENDING INVITE REQUESTS ({inviteRequests.length})
+          </h2>
+          <div className="space-y-3">
+            {inviteRequests.map((req) => (
+              <div
+                key={req.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-brand-card border border-brand-border gap-4"
+              >
+                <div className="space-y-1">
+                  <h4 className="text-base font-black text-brand-text uppercase italic tracking-tight">
+                    {req.email}
+                  </h4>
+                  <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-wider">
+                    REQUESTED BY @{req.invitedBy.username ?? "unknown"}
+                    {req.note ? ` — ${req.note}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <a
+                    href={`/admin?email=${encodeURIComponent(req.email)}#provision`}
+                    className="text-[10px] font-black tracking-[0.15em] uppercase px-3 py-2 bg-brand-orange/10 text-brand-orange border border-brand-orange/20 hover:bg-brand-orange hover:text-black transition-colors"
+                  >
+                    AUTHORIZE
+                  </a>
+                  <form action={dismissInviteRequest}>
+                    <input type="hidden" name="id" value={req.id} />
+                    <button
+                      type="submit"
+                      className="text-[10px] font-black tracking-[0.15em] uppercase px-3 py-2 bg-transparent text-brand-text-muted border border-brand-border hover:border-brand-border-strong hover:text-brand-text transition-colors cursor-pointer"
+                    >
+                      DISMISS
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Operator creation form */}
-      <div className="panel-aggressive relative">
+      <div id="provision" className="panel-aggressive relative">
         <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-[0.02] hazard-stripes" />
         
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -168,6 +221,7 @@ export default async function AdminPage({
               type="email"
               name="email"
               required
+              defaultValue={prefillEmail}
               placeholder="operator@example.com"
               className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
             />

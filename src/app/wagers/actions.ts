@@ -167,3 +167,36 @@ export async function respondToChallenge(formData: FormData) {
 
   redirect("/wagers");
 }
+
+const inviteRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  note: z.string().trim().max(200).optional(),
+});
+
+// Lead capture only - no email gets sent from here. Surfaces on /admin for
+// the maintainer to manually provision + invite out of band.
+export async function submitInviteRequest(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/signin");
+  const userId = session.user.id;
+
+  const parsed = inviteRequestSchema.safeParse({
+    email: formData.get("email"),
+    note: formData.get("note") || undefined,
+  });
+  if (!parsed.success) {
+    redirect(`/wagers?${buildEchoParams(formData, "invalid-invite-email")}`);
+  }
+
+  const { email, note } = parsed.data;
+
+  // Dedupe: don't pile up duplicate pending rows for the same email.
+  const existing = await prisma.inviteRequest.findFirst({ where: { email } });
+  if (!existing) {
+    await prisma.inviteRequest.create({
+      data: { email, note, invitedById: userId },
+    });
+  }
+
+  redirect("/wagers?success=invite-sent");
+}

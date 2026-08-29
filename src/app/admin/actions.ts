@@ -149,3 +149,25 @@ export async function removeAllowedEmail(formData: FormData) {
   revalidatePath("/admin");
   redirect("/admin?success=removed");
 }
+
+// Dismisses a pending invite request once the admin has manually handled
+// it (either provisioned + emailed them, or decided not to) - decoupled
+// on purpose from addAllowedEmail rather than auto-clearing on authorize,
+// so a dismiss is always a deliberate, separate confirmation.
+export async function dismissInviteRequest(formData: FormData) {
+  if (!(await checkAdmin())) {
+    redirect("/admin?error=unauthorized");
+  }
+
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) {
+    redirect("/admin?error=invalid-email");
+  }
+
+  await prisma.inviteRequest.delete({ where: { id } }).catch(() => {
+    // Already dismissed/removed - not an error worth surfacing.
+  });
+
+  revalidatePath("/admin");
+  redirect("/admin?success=invite-dismissed");
+}
