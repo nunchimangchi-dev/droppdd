@@ -8,17 +8,21 @@ import { prisma } from "@/lib/prisma";
 import { isSameCalendarDay } from "@/lib/streak";
 import { computeCurrentStreak, isRestDayEligible } from "@/lib/checkin";
 
+// Unchecked checkboxes come back as `null` from formData.get(), not
+// `undefined` - .optional() alone rejects null, so every field here
+// needs .nullable() too, or a valid submission with anything unchecked
+// gets rejected.
 const checkInSchema = z.object({
-  strengthPushups: z.literal("on").optional(),
-  strengthSitups: z.literal("on").optional(),
-  strengthPullups: z.literal("on").optional(),
-  strengthFloorPress: z.literal("on").optional(),
-  strengthFloorOverhead: z.literal("on").optional(),
-  strengthPlanks: z.literal("on").optional(),
-  movementMet: z.literal("on").optional(),
-  eatingMet: z.literal("on").optional(),
-  weight: z.coerce.number().positive().optional(),
-  weightUnit: z.enum(["LBS", "KG"]).optional(),
+  strengthPushups: z.literal("on").nullable().optional(),
+  strengthSitups: z.literal("on").nullable().optional(),
+  strengthPullups: z.literal("on").nullable().optional(),
+  strengthFloorPress: z.literal("on").nullable().optional(),
+  strengthFloorOverhead: z.literal("on").nullable().optional(),
+  strengthPlanks: z.literal("on").nullable().optional(),
+  movementMet: z.literal("on").nullable().optional(),
+  eatingMet: z.literal("on").nullable().optional(),
+  weight: z.coerce.number().positive().nullable().optional(),
+  weightUnit: z.enum(["LBS", "KG"]).nullable().optional(),
 });
 
 const KG_TO_LBS = 2.20462;
@@ -101,7 +105,7 @@ export async function checkIn(formData: FormData) {
 
   // Weight logging is optional now - WeightRecord/Progress.currentWeight
   // only update if a value was actually provided.
-  if (d.weight !== undefined && d.weightUnit) {
+  if (d.weight != null && d.weightUnit) {
     const weightLbs = d.weightUnit === "KG" ? d.weight * KG_TO_LBS : d.weight;
     const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
 
