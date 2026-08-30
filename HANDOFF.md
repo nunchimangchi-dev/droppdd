@@ -1844,3 +1844,15 @@ route exists and is live). Did not re-run the full click-through pass
 covering every feature shipped since the last staging deploy - that's a
 larger follow-up if staging is going to be used as a real pre-prod gate
 going forward rather than a one-off catch-up.
+
+## 2026-08-30 — Raise beta cap 10 → 33
+
+### What and why
+`BETA_USER_LIMIT` (`src/lib/beta-limit.ts`) raised from 10 to 33, ahead
+of a planned push for outside distribution (X/build-in-public, a Discord
+community as a testing pipeline). One constant, two call sites
+(`admin/actions.ts` enforcement, `admin/page.tsx` display) - no other
+changes needed.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass.

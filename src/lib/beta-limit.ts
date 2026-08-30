@@ -1,1 +1,1 @@
-export const BETA_USER_LIMIT = 10;
+export const BETA_USER_LIMIT = 33;
