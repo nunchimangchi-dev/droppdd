@@ -1755,3 +1755,38 @@ the production database directly (not just trusted the UI), confirmed
 the streak computed to 1, confirmed the dashboard reflected it, and
 confirmed reloading /checkin correctly pre-filled today's saved state
 for correction.
+
+## 2026-08-29 — Wager challenge: accept email, not just callsign
+
+Follow-up to the wager-flow invite request from earlier - discussed as a
+UX question before building. Real friction: you usually know a friend's
+email, not the exact callsign they picked, especially if they haven't
+joined yet. The field now accepts either.
+
+- Lookup order in `createWager`: exact username match first (unchanged),
+  then - only if the input is email-shaped (`z.string().email()`) - an
+  existing member's email. This covers a case broader than just the
+  invite path: a real member whose callsign you don't remember, not only
+  someone who hasn't joined yet. No ambiguity between the two lookup
+  types since usernames are alphanumeric/underscore only
+  (`usernameSchema`) and can never contain `@`.
+- Only when genuinely nobody matches does the invite panel appear - now
+  carrying the actual email through (`challengeEmail` param) so it
+  arrives pre-filled instead of asking the user to retype what they just
+  typed.
+- Deliberately did not add a second, always-visible "invite" button next
+  to Send Challenge (a real alternative discussed) - reasoning: once the
+  one field does this, a second control doing almost the same thing adds
+  a decision point without adding real capability. Anyone inviting
+  someone already has an email in hand; they'd type it into the one
+  field either way.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass. Given the checkbox
+validation bug found in the last feature by live testing alone, this one
+needs the same treatment before considering it done: challenge by an
+existing member's email (confirm it resolves to a real challenge, not an
+invite offer), challenge by a genuinely unknown email (confirm the
+invite panel appears pre-filled with that exact email), challenge by an
+unknown callsign that isn't email-shaped (confirm the original
+no-prefill behavior is unchanged).

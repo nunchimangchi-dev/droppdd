@@ -11,7 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   "invalid-date": "End date has to be in the future.",
   "too-aggressive":
     "That pace is faster than we'll let you wager on — capped at ~1% bodyweight/week. Pick a lighter target or a longer end date.",
-  "user-not-found": "No operator found with that callsign.",
+  "user-not-found": "No operator found with that callsign or email.",
   "self-challenge": "You can't challenge yourself.",
   "invalid-challenge": "That challenge isn't yours to respond to, or it's already been resolved.",
   "invalid-invite-email": "That doesn't look like a valid email address.",
@@ -30,6 +30,7 @@ type SearchParams = {
   stakeDescription?: string;
   endDate?: string;
   challengeUsername?: string;
+  challengeEmail?: string;
 };
 
 export default async function WagersPage({
@@ -141,7 +142,9 @@ export default async function WagersPage({
       {error === "user-not-found" && (
         <div className="panel-aggressive border-brand-orange/50 space-y-3">
           <p className="text-xs font-black text-brand-text uppercase tracking-wide">
-            {sp.challengeUsername ? (
+            {sp.challengeEmail ? (
+              <>No droppdd member uses that email yet.</>
+            ) : sp.challengeUsername ? (
               <>@{sp.challengeUsername} isn&apos;t on droppdd yet.</>
             ) : (
               <>They&apos;re not on droppdd yet.</>
@@ -149,11 +152,22 @@ export default async function WagersPage({
             <span className="text-brand-orange">Know their email? Invite them.</span>
           </p>
           <form action={submitInviteRequest} className="flex flex-col sm:flex-row gap-3">
-            <input type="hidden" name="note" value={sp.challengeUsername ? `Tried to challenge @${sp.challengeUsername}` : ""} />
+            <input
+              type="hidden"
+              name="note"
+              value={
+                sp.challengeEmail
+                  ? `Tried to challenge ${sp.challengeEmail}`
+                  : sp.challengeUsername
+                  ? `Tried to challenge @${sp.challengeUsername}`
+                  : ""
+              }
+            />
             <input
               type="email"
               name="email"
               required
+              defaultValue={sp.challengeEmail}
               placeholder="their@email.com"
               className="flex-1 bg-brand-bg border border-brand-border focus:border-brand-orange rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 font-bold tracking-wide focus:outline-none focus:ring-0"
             />
@@ -275,18 +289,19 @@ export default async function WagersPage({
                   — OR CHALLENGE SOMEONE ELSE INSTEAD —
                 </p>
                 <label className="block label-micro mb-1.5">
-                  OPERATOR CALLSIGN
+                  OPERATOR CALLSIGN OR EMAIL
                 </label>
                 <input
                   type="text"
                   name="challengeUsername"
                   defaultValue={sp.challengeUsername}
-                  placeholder="leave blank for a solo wager, or enter their callsign"
+                  placeholder="leave blank for a solo wager, or enter their callsign or email"
                   className="w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors"
                 />
                 <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
-                  They&apos;ll review and confirm before this becomes active - the target above resolves
-                  against <span className="text-brand-orange">their</span> stats, not yours.
+                  Don&apos;t know their callsign? Their email works too. They&apos;ll review and confirm
+                  before this becomes active - the target above resolves against{" "}
+                  <span className="text-brand-orange">their</span> stats, not yours.
                 </p>
                 <div className="pt-3">
                   <button type="submit" className="btn-assault w-full md:w-auto">

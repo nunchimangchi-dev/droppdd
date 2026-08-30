@@ -59,10 +59,32 @@ export async function createWager(formData: FormData) {
   // the challenged user's own progress), status PENDING. The creator
   // doesn't need their own Progress row for this - they're not the one
   // being measured.
+  //
+  // The field accepts a callsign OR an email - usernames can only be
+  // alphanumeric/underscore (see usernameSchema), so there's no ambiguity
+  // between the two. Lookup order: exact username match, then (if it's
+  // email-shaped) an existing member's email, then - only if genuinely
+  // nobody matches - offer the invite path. This covers "I know their
+  // email, not the callsign they picked" for members and non-members
+  // alike, not just the invite case.
   if (challengeUsername && challengeUsername.length > 0) {
-    const targetUser = await findUserByUsername(challengeUsername);
+    let targetUser: { id: string } | null = await findUserByUsername(challengeUsername);
+
+    const looksLikeEmail = z.string().email().safeParse(challengeUsername).success;
+    if (!targetUser && looksLikeEmail) {
+      targetUser = await prisma.user.findUnique({
+        where: { email: challengeUsername.toLowerCase() },
+        select: { id: true },
+      });
+    }
+
     if (!targetUser) {
-      redirect(`/wagers?${buildEchoParams(formData, "user-not-found")}`);
+      const params = buildEchoParams(formData, "user-not-found");
+      redirect(
+        looksLikeEmail
+          ? `/wagers?${params}&challengeEmail=${encodeURIComponent(challengeUsername)}`
+          : `/wagers?${params}`
+      );
     }
     if (targetUser.id === userId) {
       redirect(`/wagers?${buildEchoParams(formData, "self-challenge")}`);
