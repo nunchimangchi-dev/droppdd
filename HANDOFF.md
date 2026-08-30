@@ -1812,3 +1812,35 @@ for a liveness probe.
 `{"status":"ok"}`. Once deployed, monitoring should be repointed at
 `https://droppdd-staging.tail2b3f17.ts.net:8443/api/health` (and prod's
 equivalent) instead of the redirect-workaround.
+
+## 2026-08-30 — Fix droppdd-staging SSH access, catch it up to main
+
+### What and why
+droppdd-staging's OpenSSH daemon was rejecting my key (never authorized
+there) - unlike droppdd-prod and unbrokerrdd, which use Tailscale SSH's
+own browser-check auth flow instead of a local key. Root cause: Tailscale
+SSH (`--ssh`) was never enabled on the staging LXC (VMID 102 on the
+`pveopti` Proxmox host). Enabled it via `pct exec 102 -- tailscale set
+--ssh --accept-risk=lose-ssh` from the Proxmox host, which now matches
+prod's auth model.
+
+That surfaced a bigger gap: staging was ~30 commits and 9 migrations
+behind main - it hadn't been deployed since before the username system,
+admin panel phase 2, AI meal planning, the beta leaderboard, the
+Attack/Check-In redesign, or the wager-email work. All shipped straight
+to prod without a staging pass in between. Did a full catch-up deploy
+rather than leave it stale: `npm ci` (new deps `@anthropic-ai/sdk`,
+`zod`), reviewed and applied all 9 pending migrations (confirmed with the
+user first - all additive: new tables/columns, or SQLite's standard
+RedefineTable INSERT-then-DROP pattern, no data loss), ran the same
+`replace-workouts-with-attack-protocol.ts` one-off already used on prod
+(staging still had the old 4-workout gym catalog), rebuilt, restarted.
+
+### Manual test plan
+Verified over staging's public Tailscale URL after restart:
+`/signin` → 200, `/api/health` → 200 `{"status":"ok"}` (correctly bypasses
+auth), `/attack` → 307 (correctly auth-gated, confirms the redesign
+route exists and is live). Did not re-run the full click-through pass
+covering every feature shipped since the last staging deploy - that's a
+larger follow-up if staging is going to be used as a real pre-prod gate
+going forward rather than a one-off catch-up.
