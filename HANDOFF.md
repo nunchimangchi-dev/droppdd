@@ -1790,3 +1790,25 @@ invite offer), challenge by a genuinely unknown email (confirm the
 invite panel appears pre-filled with that exact email), challenge by an
 unknown callsign that isn't email-shaped (confirm the original
 no-prefill behavior is unchanged).
+
+## 2026-08-30 — Add /api/health endpoint
+
+### What and why
+Added `src/app/api/health/route.ts`: a plain unauthenticated `GET` that
+returns `{"status": "ok"}` with a 200. Requested by the homelab's new
+Blackbox Exporter monitoring setup (built by a peer session,
+`network-ops-02`) - it was probing droppdd-staging's root URL, which
+redirects (307) to a Tailscale-only MagicDNS signin address the
+monitoring host can't follow, producing a false "DOWN" alert. This gives
+monitoring a real, stable 200 to probe instead of inferring health from
+an auth redirect.
+
+No auth check, no DB query - intentionally the minimal possible surface
+for a liveness probe.
+
+### Manual test plan
+`npm run build` and `npm run lint` both pass. Verified locally:
+`curl http://localhost:3939/api/health` → `HTTP 200`, body
+`{"status":"ok"}`. Once deployed, monitoring should be repointed at
+`https://droppdd-staging.tail2b3f17.ts.net:8443/api/health` (and prod's
+equivalent) instead of the redirect-workaround.
