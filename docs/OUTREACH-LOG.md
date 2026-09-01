@@ -5,13 +5,16 @@ things happen — new invite, someone connects, a post goes up, a reply
 comes in. Not auto-generated; kept manually alongside the rest of the
 project's dated docs.
 
-**Beta capacity**: 10 slots total (enforced in code, `src/lib/beta-limit.ts`).
+**Beta capacity**: 33 slots total (enforced in code, `src/lib/beta-limit.ts`;
+raised from 10 → 33 on 2026-08-30 ahead of outside distribution).
 Admin accounts don't count against the cap.
 
-## Summary (as of 2026-08-27)
+## Summary (fill count verified live against droppdd-prod 2026-09-01)
 
-- **1 / 10 beta slots used**
-- **3 total allowlisted accounts** (1 owner/admin, 1 admin, 1 member)
+- **1 / 33 beta slots used** — 32 open
+- **3 total allowlisted accounts** (2 admin: owner + davidjwlee, 1 member: Mom)
+- **1 account actually connected + onboarded** (username set); the other
+  allowlisted accounts haven't signed in yet
 - **1 public outreach post** live (Reddit)
 - **3 mod permission requests** sent: 1 declined (r/omad), 2 awaiting response (r/keto, r/omadketo)
 
