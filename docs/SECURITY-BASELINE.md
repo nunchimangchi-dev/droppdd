@@ -46,7 +46,7 @@ people. Required before that changes.
 - **Real staging environment** — a separate deploy, separate database, not
   "push to main and hope." (For droppdd specifically: now cheap to build,
   given the Proxmox + Cloudflare Tunnel + cert automation infra already
-  exists from the home infrastructure work — see the staging-setup session.)
+  exists from the infrastructure work — see the staging-setup session.)
 - **Privacy Policy + Terms**, with an actual acceptance flow — not a
   template nobody reads, not a page that exists but was never linked from
   sign-up.

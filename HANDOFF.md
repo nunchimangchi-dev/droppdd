@@ -1795,8 +1795,8 @@ no-prefill behavior is unchanged).
 
 ### What and why
 Added `src/app/api/health/route.ts`: a plain unauthenticated `GET` that
-returns `{"status": "ok"}` with a 200. Requested by the home infrastructure's new
-Blackbox Exporter monitoring setup (built by a peer session,
+returns `{"status": "ok"}` with a 200. Requested by the new
+infrastructure-monitoring Blackbox Exporter setup (built by a peer session,
 `network-ops-02`) - it was probing droppdd-staging's root URL, which
 redirects (307) to a Tailscale-only MagicDNS signin address the
 monitoring host can't follow, producing a false "DOWN" alert. This gives
