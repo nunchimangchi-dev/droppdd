@@ -1,7 +1,7 @@
 # Beta outreach log
 
 Living log of who's been invited and what's gone out publicly. Update as
-things happen — new invite, someone connects, a post goes up, a reply
+things happen: new invite, someone connects, a post goes up, a reply
 comes in. Not auto-generated; kept manually alongside the rest of the
 project's dated docs.
 
@@ -11,7 +11,7 @@ Admin accounts don't count against the cap.
 
 ## Summary (fill count verified live against droppdd-prod 2026-09-01)
 
-- **1 / 33 beta slots used** — 32 open
+- **1 / 33 beta slots used**, 32 open
 - **3 total allowlisted accounts** (2 admin: owner + davidjwlee, 1 member: Mom)
 - **1 account actually connected + onboarded** (username set); the other
   allowlisted accounts haven't signed in yet
@@ -34,7 +34,7 @@ out, so this stays the single source of truth for outreach.
 
 | Date | Platform | Community | Status | Link / notes |
 |---|---|---|---|---|
-| 2026-08-27 | Reddit | r/AlphaAndBetaUsers | Posted | Tagged Beta. Exact post URL not recorded here yet — add it when handy so replies/comments are easy to check back on. |
+| 2026-08-27 | Reddit | r/AlphaAndBetaUsers | Posted | Tagged Beta. Exact post URL not recorded here yet. Add it when handy so replies/comments are easy to check back on. |
 
 ## Mod permission requests (pending)
 
@@ -52,11 +52,11 @@ mod to try it themselves.
 
 ## Backlog / considered, not yet posted
 
-- r/IMadeThis — general maker-showcase, broader/less targeted reach; conflicting subscriber-count data found (28k-440k depending on source), not verified.
+- r/IMadeThis: general maker-showcase, broader/less targeted reach; conflicting subscriber-count data found (28k-440k depending on source), not verified.
 
 ## How to update this log
 
 Ask directly, e.g. "add a line: [name] connected today" or "update the
-Reddit post with N comments as of today" — this file isn't wired to
+Reddit post with N comments as of today". This file isn't wired to
 anything automated, so nothing updates unless someone (you or a future
 session) edits it.
