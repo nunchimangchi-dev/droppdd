@@ -97,6 +97,22 @@ model User {
   boardItems       BoardItem[]
   inviteRequests   InviteRequest[]
   dailyCheckIns    DailyCheckIn[]
+  aiMealGenerations AiMealGeneration[]
+}
+
+// One row per AI meal-generation ATTEMPT that reached the paid Anthropic
+// call (logged at the same point the cooldown is spent - a call that hits
+// the API costs money whether or not its output validates). Backs the
+// per-user and global daily caps in src/lib/ai-limits.ts. No generated
+// content is stored here; this is a spend meter, nothing else.
+model AiMealGeneration {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,

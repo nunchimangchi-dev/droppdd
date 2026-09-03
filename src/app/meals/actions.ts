@@ -4,6 +4,11 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Anthropic from "@anthropic-ai/sdk";
+import {
+  AI_MEAL_DAILY_PER_USER,
+  AI_MEAL_DAILY_GLOBAL,
+  dayStartUtc,
+} from "@/lib/ai-limits";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -70,6 +75,33 @@ export async function generateAiMeal(rawData: unknown) {
         error: `COOLDOWN ACTIVE: Wait ${wait}s before generating another protocol.`,
       };
     }
+  }
+
+  // 2b. Daily spend caps - each generation past here is a real billed
+  // Anthropic call. Per-user and global limits reset at UTC midnight.
+  // Counts ATTEMPTS (logged where the cooldown is spent), not just
+  // successes, since a call that hits the API costs money regardless.
+  const dayStart = dayStartUtc();
+  const [userTodayCount, globalTodayCount] = await Promise.all([
+    prisma.aiMealGeneration.count({
+      where: { userId, createdAt: { gte: dayStart } },
+    }),
+    prisma.aiMealGeneration.count({
+      where: { createdAt: { gte: dayStart } },
+    }),
+  ]);
+  if (globalTodayCount >= AI_MEAL_DAILY_GLOBAL) {
+    return {
+      success: false,
+      error:
+        "AI ENGINE COOLING DOWN: The meal planner has hit its daily generation limit across all operators. Back online after 00:00 UTC.",
+    };
+  }
+  if (userTodayCount >= AI_MEAL_DAILY_PER_USER) {
+    return {
+      success: false,
+      error: `DAILY LIMIT REACHED: You've generated ${AI_MEAL_DAILY_PER_USER} protocols today. Resets at 00:00 UTC.`,
+    };
   }
 
   // 3. Validate input parameters
@@ -181,14 +213,17 @@ The JSON object must strictly conform to this TypeScript schema:
 
 Return ONLY this valid JSON object.`;
 
-  // Mark the cooldown as spent now, right before the real API call - a
-  // validation failure above shouldn't burn it, but an actual attempt
-  // (successful or not) should, since it's the API cost being guarded
-  // against, not just button-mashing.
-  await prisma.user.update({
-    where: { id: userId },
-    data: { lastAiMealGeneratedAt: new Date() },
-  });
+  // Spend the cooldown AND log the daily-cap meter now, right before the
+  // real API call - a validation failure above shouldn't burn either, but
+  // an actual attempt (successful or not) should, since it's the API cost
+  // being guarded against, not just button-mashing.
+  await Promise.all([
+    prisma.user.update({
+      where: { id: userId },
+      data: { lastAiMealGeneratedAt: new Date() },
+    }),
+    prisma.aiMealGeneration.create({ data: { userId } }),
+  ]);
 
   try {
     const message = await anthropic.messages.create(

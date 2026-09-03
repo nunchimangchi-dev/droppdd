@@ -1912,3 +1912,32 @@ committed.
 success state → renders on `/admin` with the SELF-REQUEST badge, no crash.
 Real-token happy path (real widget + real hostname check) verified on
 staging/prod after deploy — see deploy notes.
+
+## 2026-09-03 — Hard daily caps on AI meal generation
+
+### What and why
+AI meal planning was cost-unbounded: a real billed Anthropic call
+(claude-haiku-4-5, ~$0.01-0.015 each) with only a 60s per-user cooldown
+between attempts - no daily or monthly ceiling. Fine at 1 user, a
+liability once the beta fills or a script calls the action directly.
+
+### Changes
+- **`prisma/schema.prisma` / migration `20260903134048_add_ai_meal_generation_meter`**:
+  new `AiMealGeneration` model (`userId`, `createdAt`, two indexes) - one
+  row per generation attempt that reaches the paid call. Purely additive
+  (CREATE TABLE + indexes). Stores no generated content; it's a spend
+  meter.
+- **`src/lib/ai-limits.ts`** (new): `AI_MEAL_DAILY_PER_USER = 15`,
+  `AI_MEAL_DAILY_GLOBAL = 250` (~$3.25/day worst case), plus `dayStartUtc()`.
+- **`src/app/meals/actions.ts`**: after the cooldown check, count today's
+  `AiMealGeneration` rows (per-user + global, UTC day). Global cap hit ->
+  "back after 00:00 UTC"; per-user cap hit -> "daily limit" message. The
+  meter row is written alongside `lastAiMealGeneratedAt`, right before the
+  API call - counts attempts, not just successes, since a call that hits
+  the API costs money regardless of whether its output validates.
+
+### Manual test plan
+`npm run lint` + `npm run build` pass. Not functionally testable locally
+(no ANTHROPIC_API_KEY in dev `.env`) - AI-path verification is on prod:
+generate a meal, confirm one `AiMealGeneration` row is written; the
+per-user/global count logic is a plain row count against that table.
