@@ -9,10 +9,10 @@ project's dated docs.
 raised from 10 → 33 on 2026-08-30 ahead of outside distribution).
 Admin accounts don't count against the cap.
 
-## Summary (fill count verified live against droppdd-prod 2026-09-01)
+## Summary (fill count verified live against droppdd-prod 2026-09-03)
 
-- **1 / 33 beta slots used**, 32 open
-- **3 total allowlisted accounts** (2 admin: owner + davidjwlee, 1 member: Mom)
+- **2 / 33 beta slots used**, 31 open (Mom, Danny Valdez)
+- **4 total allowlisted accounts** (2 admin: owner + davidjwlee, 2 members: Mom, Danny Valdez)
 - **1 account actually connected + onboarded** (username set); the other
   allowlisted accounts haven't signed in yet
 - **1 public outreach post** live (Reddit)
@@ -28,7 +28,7 @@ out, so this stays the single source of truth for outreach.
 | 2026-08-26 | Mom | harleysfleas@yahoo.com | Personal email invite | Allowlisted (member) | Confirmed connecting 2026-08-28 |
 | 2026-08-26 | davidjwlee | davidjwlee@gmail.com | Personal invite | Allowlisted (**admin**) | Confirmed connecting 2026-08-28 |
 | 2026-09-03 | Taras | (not recorded) | Personal DM (`dropp-invite` template, variant A, short) | Invited, awaiting response | First real send of the approved outreach template. |
-| 2026-09-03 | Danny Valdez | dvaldez1@gmail.com (submitted; a first try used `.con` by typo) | dropp-invite template variant A | Requested access, email pending verification | Replied "nice, an accountability app, I need that" and submitted `/request-access`. Two queue rows: `dvaldez1@gmail.con` (typo) then `dvaldez1@gmail.com` ~2 min later. Not allowlisted until Warren confirms the address. |
+| 2026-09-03 | Danny Valdez | dvaldez1@gmail.com | dropp-invite template variant A | Allowlisted, member | Replied "nice, an accountability app, I need that" and submitted `/request-access` (first try had a `.con` typo, corrected 2 min later). Warren confirmed the address; allowlisted 2026-09-03, typo + fulfilled queue rows dismissed. Warren to notify Danny it's ready (no auto-email on approval). |
 
 ## Public outreach posts
 
