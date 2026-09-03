@@ -1856,3 +1856,59 @@ changes needed.
 
 ### Manual test plan
 `npm run build` and `npm run lint` both pass.
+
+## 2026-09-03 — Self-serve /request-access (Turnstile-gated)
+
+### What and why
+Onboarding was 100% manual: every beta user needed an admin to hand-add
+their email before they could sign in, and the site gave a stranger no
+way to ask in (a rejected Google login just hit /auth-error). That makes
+any growth channel a dead end. This adds a public request path that feeds
+the existing admin queue — still no auto-provisioning, still a human
+decision, just no longer out-of-band.
+
+### Changes
+- **`prisma/schema.prisma` / migration `20260903132816_self_serve_invite_requests`**:
+  `InviteRequest.invitedById` made nullable (`invitedBy` optional relation),
+  added `source String @default("self_request")` (`"self_request"` |
+  `"peer_wager"`). Standard SQLite RedefineTable migration, additive — no
+  data loss, and prod has 0 InviteRequest rows anyway. `wagers/actions.ts`
+  now writes `source: "peer_wager"` explicitly.
+- **`src/app/request-access/`** (new): public page + server action.
+  Layered checks: hidden honeypot field → Zod (email + note ≤ 280) →
+  Cloudflare Turnstile (canonical server-side siteverify, fails closed,
+  checks `success` + `action === "request_access"` + hostname allowlist)
+  → dedupe against AllowedEmail + InviteRequest (silent success either
+  way, no account enumeration) → rolling-hour cap
+  (`SELF_REQUEST_HOURLY_CAP = 20` in `src/lib/invite-limit.ts`). No email
+  sent; creates an InviteRequest row with `source: "self_request"`.
+- **`src/lib/turnstile.ts`** (new): `verifyTurnstile()` + public sitekey
+  const. Env: `TURNSTILE_SECRET` (same value all envs), `TURNSTILE_HOSTNAMES`
+  (per-env: localhost / staging tailnet host / prod host),
+  `NEXT_PUBLIC_TURNSTILE_SITEKEY` (optional override; local uses CF's
+  always-passes test key, which relaxes the action/hostname checks —
+  guarded to that test secret only, never a real env).
+- **`src/proxy.ts`**: `request-access` added to the public matcher
+  exclusions.
+- **Links in**: `/signin` ("NOT ON THE LIST? REQUEST ACCESS"), `/auth-error`
+  (a prominent REQUEST ACCESS button on the `AccessDenied` case — the
+  highest-intent moment), `/why` (new "Want in?" section).
+- **`src/app/admin/page.tsx`**: pending-requests list handles the now-nullable
+  inviter and shows a `SELF-REQUEST` / `PEER INVITE` source badge. AUTHORIZE
+  + DISMISS flow unchanged (AUTHORIZE still just prefills the provision form).
+
+### Turnstile widget
+Created via the Cloudflare API (account `f019…a228`), name "droppdd
+request-access", managed mode, `no_clearance`, domains: prod + staging
+tailnet host + localhost + 127.0.0.1. Public sitekey
+`0x4AAAAAAEmAkbs-A5qk2TsS` (baked as the default in `turnstile.ts`). The
+secret key is set only in each env's `.env` as `TURNSTILE_SECRET`, never
+committed.
+
+### Manual test plan
+`npm run lint` + `npm run build` pass. Local (CF test keys): `/request-access`
+→ 200, `/` → 307 (gate intact), widget mounts, full submit → server action
+→ InviteRequest row (`source=self_request`, null inviter) → `?sent=1`
+success state → renders on `/admin` with the SELF-REQUEST badge, no crash.
+Real-token happy path (real widget + real hostname check) verified on
+staging/prod after deploy — see deploy notes.

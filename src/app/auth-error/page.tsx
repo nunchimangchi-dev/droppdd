@@ -2,7 +2,7 @@ const ERROR_MESSAGES: Record<string, { heading: string; message: string }> = {
   AccessDenied: {
     heading: "ACCESS DENIED",
     message:
-      "That Google account isn't on the beta allowlist yet. droppdd is invite-only right now - if you were expecting access, reach out through whoever sent you the invite.",
+      "That Google account isn't on the beta allowlist yet. droppdd is invite-only right now - request access below, or reach out through whoever sent you the invite.",
   },
   Configuration: {
     heading: "CONFIGURATION ERROR",
@@ -24,6 +24,7 @@ export default async function AuthErrorPage({
     heading: "SOMETHING WENT WRONG",
     message: "Try signing in again.",
   };
+  const showRequestAccess = (error ?? "") === "AccessDenied";
 
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-brand-bg overflow-hidden">
@@ -63,12 +64,26 @@ export default async function AuthErrorPage({
             </p>
           </div>
 
-          <a
-            href="/signin"
-            className="btn-assault w-full py-5 inline-flex items-center justify-center cursor-pointer"
-          >
-            <span>BACK TO SIGN IN</span>
-          </a>
+          <div className="space-y-3">
+            {showRequestAccess && (
+              <a
+                href="/request-access"
+                className="btn-assault w-full py-5 inline-flex items-center justify-center cursor-pointer"
+              >
+                <span>REQUEST ACCESS</span>
+              </a>
+            )}
+            <a
+              href="/signin"
+              className={`w-full py-4 inline-flex items-center justify-center cursor-pointer text-[10px] font-black tracking-[0.2em] uppercase transition-colors ${
+                showRequestAccess
+                  ? "text-brand-text-muted/60 hover:text-brand-orange"
+                  : "btn-assault py-5"
+              }`}
+            >
+              <span>BACK TO SIGN IN</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

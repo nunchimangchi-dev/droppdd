@@ -85,6 +85,12 @@ export default function SignInPage() {
             <p className="text-[9px] text-brand-text-muted/60 font-black tracking-widest uppercase">
               NO EXCUSES. NO WEAKNESS. ONLY RESULTS.
             </p>
+            <p className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-brand-text-muted/60">NOT ON THE LIST? </span>
+              <a href="/request-access" className="text-brand-orange hover:text-white transition-colors">
+                REQUEST ACCESS &rarr;
+              </a>
+            </p>
             <div className="flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-widest">
               <a href="/legal/privacy" className="text-brand-text-muted/60 hover:text-brand-orange transition-colors">
                 Privacy Policy

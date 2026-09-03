@@ -151,18 +151,20 @@ model BoardItem {
   updatedAt   DateTime @updatedAt
 }
 
-// Lightweight lead capture, not real invite automation - a signed-in
-// user hits this specifically when they try to challenge a username that
-// doesn't exist yet (the highest-intent moment for inviting someone: they
-// already tried). Admins see the pending list on /admin and manually
-// provision + email the person out of band - no auto-send, no new email
-// infrastructure.
+// Lightweight lead capture, not real invite automation. Two sources:
+//  - "peer_wager": a signed-in user tried to challenge a username/email that
+//    isn't a user yet (highest-intent - they already tried). invitedBy set.
+//  - "self_request": a stranger asked in via the public /request-access form
+//    (Turnstile-gated). invitedBy null.
+// Admins see the pending list on /admin and manually provision + email the
+// person out of band - no auto-send, no new email infrastructure.
 model InviteRequest {
   id            String   @id @default(cuid())
   email         String
-  note          String? // e.g. the callsign they originally tried to challenge
-  invitedById   String
-  invitedBy     User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  note          String? // e.g. the callsign they tried, or a note from the requester
+  source        String   @default("self_request") // "self_request" | "peer_wager"
+  invitedById   String?
+  invitedBy     User?    @relation(fields: [invitedById], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
 }
 

@@ -216,7 +216,7 @@ export async function submitInviteRequest(formData: FormData) {
   const existing = await prisma.inviteRequest.findFirst({ where: { email } });
   if (!existing) {
     await prisma.inviteRequest.create({
-      data: { email, note, invitedById: userId },
+      data: { email, note, invitedById: userId, source: "peer_wager" },
     });
   }
 

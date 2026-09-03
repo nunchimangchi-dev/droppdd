@@ -49,6 +49,17 @@ export default function WhyPage() {
         </section>
 
         <section>
+          <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Want in?</h2>
+          <p>
+            droppdd is a small, capped beta.{" "}
+            <a href="/request-access" className="font-black text-brand-orange hover:text-white transition-colors no-underline">
+              Request access
+            </a>{" "}
+            and we&apos;ll reach out if a slot opens.
+          </p>
+        </section>
+
+        <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Get in touch</h2>
           <p>
             Found a bug, have feedback, or just want to say hi? We read every message.

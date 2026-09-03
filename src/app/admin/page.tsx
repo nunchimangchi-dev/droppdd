@@ -140,9 +140,10 @@ export default async function AdminPage({
         </Link>
       </div>
 
-      {/* Pending invite requests - lead capture from the wager peer-challenge
-          flow, not real invite automation. Admin manually authorizes +
-          reaches out out of band. */}
+      {/* Pending invite requests - lead capture, not real invite automation.
+          Two sources: peer wager-challenges of a non-user, and the public
+          /request-access form. Admin manually authorizes + reaches out out
+          of band. */}
       {inviteRequests.length > 0 && (
         <div className="panel-aggressive border-brand-orange/50">
           <h2 className="text-lg font-black tracking-wider text-brand-text-muted uppercase mb-4 flex items-center gap-2">
@@ -156,11 +157,18 @@ export default async function AdminPage({
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-brand-card border border-brand-border gap-4"
               >
                 <div className="space-y-1">
-                  <h4 className="text-base font-black text-brand-text uppercase italic tracking-tight">
-                    {req.email}
-                  </h4>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-base font-black text-brand-text uppercase italic tracking-tight">
+                      {req.email}
+                    </h4>
+                    <span className="text-[8px] font-black tracking-widest bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-1.5 py-0.5 uppercase leading-none">
+                      {req.source === "peer_wager" ? "PEER INVITE" : "SELF-REQUEST"}
+                    </span>
+                  </div>
                   <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-wider">
-                    REQUESTED BY @{req.invitedBy.username ?? "unknown"}
+                    {req.source === "peer_wager"
+                      ? `REQUESTED BY @${req.invitedBy?.username ?? "unknown"}`
+                      : "VIA /REQUEST-ACCESS"}
                     {req.note ? ` — ${req.note}` : ""}
                   </p>
                 </div>
