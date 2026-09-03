@@ -20,10 +20,14 @@ Admin accounts don't count against the cap.
 
 ## Personal invites
 
+Sends relayed from the Pitch session (external-comms strategy) as they go
+out, so this stays the single source of truth for outreach.
+
 | Date | Person | Contact | Channel | Status | Notes |
 |---|---|---|---|---|---|
 | 2026-08-26 | Mom | harleysfleas@yahoo.com | Personal email invite | Allowlisted (member) | Confirmed connecting 2026-08-28 |
 | 2026-08-26 | davidjwlee | davidjwlee@gmail.com | Personal invite | Allowlisted (**admin**) | Confirmed connecting 2026-08-28 |
+| 2026-09-03 | Taras | — | Personal DM (`dropp-invite` template, variant A — short) | Invited — awaiting response | First real send of the approved outreach template. |
 
 ## Public outreach posts
 
