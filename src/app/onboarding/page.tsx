@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { PERSONA_OPTIONS, DEFAULT_PERSONA } from "@/lib/personas";
 import { onboardUser } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -78,6 +79,54 @@ export default async function OnboardingPage({
         </div>
 
         <form action={onboardUser} className="space-y-5">
+          {/* Eating approach - drives only the daily "Eating" check-in
+              prompt and an optional reminder. Not a diet the app enforces. */}
+          <fieldset className="space-y-3 border border-brand-border p-4">
+            <legend className="label-micro px-2">YOUR APPROACH</legend>
+            <p className="text-[10px] text-brand-text-muted uppercase font-bold leading-relaxed">
+              How you handle eating. This just tailors your daily check-in - pick the closest.
+            </p>
+            <div className="space-y-2">
+              {PERSONA_OPTIONS.map((p) => (
+                <label
+                  key={p.value}
+                  className="flex items-start gap-3 bg-brand-bg/50 border border-brand-border p-3 cursor-pointer hover:border-brand-border-strong has-[:checked]:border-brand-orange"
+                >
+                  <input
+                    type="radio"
+                    name="persona"
+                    value={p.value}
+                    required
+                    defaultChecked={p.value === DEFAULT_PERSONA}
+                    className="mt-0.5 w-4 h-4 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+                  />
+                  <span>
+                    <span className="block text-xs font-black text-brand-text uppercase">{p.label}</span>
+                    <span className="block text-[10px] text-brand-text-muted font-bold uppercase tracking-wide mt-0.5">
+                      {p.blurb}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div>
+              <label htmlFor="eatingTargetNote" className="block label-micro mb-1.5">
+                YOUR TARGET <span className="text-brand-text-muted/40">(OPTIONAL)</span>
+              </label>
+              <input
+                type="text"
+                id="eatingTargetNote"
+                name="eatingTargetNote"
+                maxLength={120}
+                placeholder="A reminder to yourself, e.g. 20g carbs, one meal 6-7pm"
+                className={inputClass}
+              />
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                Just shown back to you at check-in. Never tracked or enforced.
+              </p>
+            </div>
+          </fieldset>
+
           <div>
             <label className="block label-micro mb-1.5">WEIGHT UNIT</label>
             <select name="weightUnit" required defaultValue="LBS" className={selectClass}>

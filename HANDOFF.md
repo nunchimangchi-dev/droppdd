@@ -1941,3 +1941,57 @@ liability once the beta fills or a script calls the action directly.
 (no ANTHROPIC_API_KEY in dev `.env`) - AI-path verification is on prod:
 generate a meal, confirm one `AiMealGeneration` row is written; the
 per-user/global count logic is a plain row count against that table.
+
+## 2026-09-03 — Eating personas (KETO / OMAD / CALORIE / KETO_OMAD)
+
+### What and why
+droppdd was billed as "OMAD + keto", which screens out people who'd get
+value from the actual product (the accountability loop + wagers, all
+method-agnostic). This adds a persona chosen at onboarding so the daily
+check-in meets people where they are. Deliberately contained: only the
+"Eating" check-in pillar changes per persona - Strength, Movement, the
+streak math (three booleans in `src/lib/checkin.ts`), wagers and the
+leaderboard are all untouched. No number-logging: "hit your target
+today?" stays one self-reported checkbox for every persona. The optional
+`eatingTargetNote` is a free-text reminder shown back at check-in, never
+parsed or enforced - same spirit as the optional weight field.
+
+Marketing copy (`/signin`, `/why`, the umbrella tagline, the persona-4
+"recomp" proof story) is deliberately NOT touched here - that's the
+positioning work Warren is doing with the Pitch session. The product
+supports four personas now; the messaging catches up separately.
+
+### Changes
+- **`prisma/schema.prisma` / migration `20260903160330_add_eating_persona`**:
+  `Progress.persona String @default("KETO_OMAD")` (`"KETO"` | `"OMAD"` |
+  `"CALORIE"` | `"KETO_OMAD"`) + `Progress.eatingTargetNote String?`.
+  Standard SQLite RedefineTable, additive - existing rows get the
+  `KETO_OMAD` default (the original app assumption), which is correct for
+  the 1 real prod user.
+- **`src/lib/personas.ts`** (new): the four personas + per-persona
+  `checkPrompt` (the daily Eating checkbox text), `blurb`, `label`,
+  `targetPlaceholder`; `personaMeta()` resolver; `PERSONA_OPTIONS` order
+  (KETO_OMAD last so it reads as "go all in", not the default ask -
+  though it IS the schema default for back-compat).
+- **`src/app/onboarding/`**: "YOUR APPROACH" fieldset (4 radios + optional
+  target field) at the top of the form; Zod + `progress.create` updated.
+- **`src/app/checkin/page.tsx`**: Eating checkbox label = the persona's
+  `checkPrompt`; shows "Your target: <note>" when set. No logic change.
+- **`src/app/profile/`**: EATING APPROACH select + EATING TARGET field in
+  the existing details panel; Zod + `updateProfileDetails` updated.
+
+### Not done (fast-follow, noted)
+- The AI meal planner (`src/app/meals/actions.ts`) still prompts as a
+  "keto/OMAD chef" regardless of persona and only reads `mealPreference`.
+  A CALORIE-persona user can still use the macro-driven entry point
+  directly. Wiring `persona` + a calorie target into the planner prompt
+  is a follow-up, not this change.
+
+### Manual test plan
+`npm run lint` + `npm run build` pass. Local, full flow in the browser:
+onboarding with persona=CALORIE + a target note -> `Progress` row written
+with both -> `/checkin` Eating section shows "Hit my calorie / macro
+target today" + "Your target: 1800 kcal, 150g protein" -> `/profile`
+change approach to Keto + OMAD -> success banner -> DB shows
+`persona=KETO_OMAD`, note preserved. Streak unaffected (checkin.ts
+untouched).

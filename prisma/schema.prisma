@@ -71,6 +71,8 @@ model Progress {
   age            Int?
   heightInches   Float?
   mealPreference String? // "CARNIVORE" | "VEGETARIAN" | "NO_PREFERENCE"
+  persona        String  @default("KETO_OMAD") // "KETO" | "OMAD" | "CALORIE" | "KETO_OMAD" - eating method, drives the check-in "Eating" prompt only (see src/lib/personas.ts)
+  eatingTargetNote String? // optional self-set reminder shown at check-in (e.g. "20g carbs, 6-7pm"); never parsed or enforced
 }
 
 model AllowedEmail {

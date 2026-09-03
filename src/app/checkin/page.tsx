@@ -9,6 +9,7 @@ import {
   countStrengthCompleted,
   isRestDayEligible,
 } from "@/lib/checkin";
+import { personaMeta } from "@/lib/personas";
 import { checkIn, takeRestDay } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -55,6 +56,7 @@ export default async function CheckInPage({
   const { error } = await searchParams;
 
   const strengthCompleted = todayCheckIn ? countStrengthCompleted(todayCheckIn) : 0;
+  const eating = personaMeta(progress.persona);
 
   return (
     <div className="space-y-8 animate-fade-in max-w-xl mx-auto">
@@ -162,12 +164,19 @@ export default async function CheckInPage({
             </label>
           </div>
 
-          {/* Eating */}
+          {/* Eating - prompt is tailored to the user's chosen approach
+              (src/lib/personas.ts). Still one self-reported checkbox; the
+              streak math treats it identically for every persona. */}
           <div className="space-y-3">
             <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
               <span className="w-1.5 h-5 bg-brand-orange block" />
               EATING
             </h2>
+            {progress.eatingTargetNote && (
+              <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-wide">
+                Your target: {progress.eatingTargetNote}
+              </p>
+            )}
             <label className="flex items-center gap-3 bg-brand-bg/50 border border-brand-border p-4 cursor-pointer hover:border-brand-border-strong">
               <input
                 type="checkbox"
@@ -176,7 +185,7 @@ export default async function CheckInPage({
                 className="w-5 h-5 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
               />
               <span className="text-xs font-bold text-brand-text uppercase">
-                Ate within my OMAD window today
+                {eating.checkPrompt}
               </span>
             </label>
           </div>

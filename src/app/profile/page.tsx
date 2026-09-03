@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { PERSONA_OPTIONS, DEFAULT_PERSONA } from "@/lib/personas";
 import { updateUsername, updateProfileDetails } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -50,7 +51,13 @@ export default async function ProfilePage({
 
   const progress = await prisma.progress.findFirst({
     where: { userId },
-    select: { age: true, heightInches: true, mealPreference: true },
+    select: {
+      age: true,
+      heightInches: true,
+      mealPreference: true,
+      persona: true,
+      eatingTargetNote: true,
+    },
   });
 
   const challengesReceived = await prisma.wager.findMany({
@@ -210,6 +217,43 @@ export default async function ProfilePage({
               </select>
               <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
                 Actively constrains AI-generated meal suggestions.
+              </p>
+            </div>
+
+            <div>
+              <label className="block label-micro mb-1.5">EATING APPROACH</label>
+              <select
+                name="persona"
+                required
+                defaultValue={progress.persona ?? DEFAULT_PERSONA}
+                className={selectClass}
+              >
+                {PERSONA_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                Tailors your daily check-in prompt. Not enforced.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="eatingTargetNote" className="block label-micro mb-1.5">
+                EATING TARGET <span className="text-brand-text-muted/40">(OPTIONAL)</span>
+              </label>
+              <input
+                type="text"
+                id="eatingTargetNote"
+                name="eatingTargetNote"
+                maxLength={120}
+                defaultValue={progress.eatingTargetNote ?? ""}
+                placeholder="e.g. 20g carbs, one meal 6-7pm"
+                className={inputClass}
+              />
+              <p className="text-[10px] text-brand-text-muted mt-1 uppercase font-bold">
+                Shown back to you at check-in. Never tracked or enforced.
               </p>
             </div>
 

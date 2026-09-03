@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { EATING_PERSONAS } from "@/lib/personas";
 
 const onboardSchema = z.object({
   currentWeight: z.coerce.number().positive(),
@@ -15,6 +16,8 @@ const onboardSchema = z.object({
   height: z.coerce.number().positive(),
   heightUnit: z.enum(["IN", "CM"]),
   mealPreference: z.enum(["CARNIVORE", "VEGETARIAN", "NO_PREFERENCE"]),
+  persona: z.enum(EATING_PERSONAS),
+  eatingTargetNote: z.string().trim().max(120).nullable().optional(),
 });
 
 const KG_TO_LBS = 2.20462;
@@ -44,13 +47,16 @@ export async function onboardUser(formData: FormData) {
     height: formData.get("height"),
     heightUnit: formData.get("heightUnit"),
     mealPreference: formData.get("mealPreference"),
+    persona: formData.get("persona"),
+    eatingTargetNote: formData.get("eatingTargetNote") || undefined,
   });
 
   if (!parsed.success) {
     redirect("/onboarding?error=invalid-values");
   }
 
-  const { weightUnit, heightUnit, age, mealPreference } = parsed.data;
+  const { weightUnit, heightUnit, age, mealPreference, persona } = parsed.data;
+  const eatingTargetNote = parsed.data.eatingTargetNote?.trim() || null;
 
   // Canonical storage units: weight in lbs, height in inches - convert
   // here so the rest of the app (leaderboard, wagers, dashboard) never
@@ -73,6 +79,8 @@ export async function onboardUser(formData: FormData) {
       age,
       heightInches,
       mealPreference,
+      persona,
+      eatingTargetNote,
     },
   });
 
