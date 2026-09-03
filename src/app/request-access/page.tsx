@@ -52,7 +52,7 @@ export default async function RequestAccessPage({
               </h1>
               <p className="text-[11px] text-brand-text-muted font-bold uppercase tracking-[0.15em] leading-relaxed max-w-sm mx-auto">
                 If a slot opens up, you&apos;ll get an invite at the email you gave us.
-                We provision by hand &mdash; it isn&apos;t instant. No account is
+                We provision by hand, so it isn&apos;t instant. No account is
                 created and nothing is charged.
               </p>
               <a
@@ -69,9 +69,9 @@ export default async function RequestAccessPage({
                   REQUEST ACCESS
                 </h1>
                 <p className="text-[11px] text-brand-text-muted font-bold uppercase tracking-[0.15em] leading-relaxed max-w-sm mx-auto">
-                  droppdd is a small, capped beta: keto/OMAD training, AI meal plans,
-                  streak tracking, and accountability wagers. Ask in and we&apos;ll
-                  reach out if a slot opens.
+                  droppdd is a capped, invite-only beta: one daily check-in matched
+                  to how you eat, a streak you don&apos;t want to break, and a
+                  friendly wager. Ask in and we&apos;ll reach out if a slot opens.
                 </p>
               </div>
 

@@ -16,33 +16,41 @@ export default function WhyPage() {
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Why we built it</h2>
           <p>
-            OMAD (one meal a day) has always been the fastest thing that&apos;s actually
-            worked for us &mdash; faster than anything else we&apos;ve tried. The eating part
-            was never really the hard part. The hard part was staying consistent past the
-            first week, when nobody&apos;s checking in. Every tracking app we tried turned
-            into a chore &mdash; log every bite, count every macro, quit by week two. So we
-            built the simplest version of what we actually needed: log one thing a day, and
-            have someone real to answer to.
+            OMAD (one meal a day) is what worked fastest for us, faster than anything
+            else we tried. But the eating part was never really the hard part. The hard
+            part was staying consistent past the first week, when nobody is checking in.
+            Every tracking app we tried turned into a chore: log every bite, count every
+            macro, quit by week two.
+          </p>
+          <p>
+            droppdd doesn&apos;t care whether you do keto, OMAD, count calories, or stack
+            keto and OMAD together. You pick your method in setup and the daily check-in
+            matches it. The hard part was never which diet. It&apos;s doing it tomorrow,
+            and the day after that. So we built the simplest version of what we actually
+            needed: log one thing a day, and have someone real to answer to.
           </p>
         </section>
 
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">What makes it work</h2>
           <p>
-            Two things, on purpose. First, it&apos;s simple &mdash; no macro math, no
-            elaborate meal plans, just one meal and a daily check-in. Second, and the part
-            we&apos;re proudest of: wagers. You can challenge someone you know to a friendly
-            bet tied to real progress, not just a self-reported claim. Having a little skin
-            in the game with someone you actually know changes everything &mdash;
-            accountability that&apos;s actually fun instead of one more chore.
+            No food diary. No macro math. You log one thing a day and get on with your
+            life. Every tracking app we tried turned eating into data entry until we
+            stopped opening them. This is the opposite of that.
+          </p>
+          <p>
+            The other half is wagers. You can challenge someone you know to a friendly
+            bet tied to real progress, not just a self-reported claim. The wager is honor
+            system. No money changes hands. The point is having someone who&apos;ll know,
+            not the stakes.
           </p>
         </section>
 
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Why we&apos;re confident</h2>
           <p>
-            We&apos;ve been using droppdd ourselves, every day, since before anyone else ever
-            saw it. This isn&apos;t a &quot;maybe this works&quot; pitch &mdash; it&apos;s
+            We&apos;ve been using droppdd ourselves, every day, since before anyone else
+            ever saw it. This isn&apos;t a &quot;maybe this works&quot; pitch. It&apos;s
             something we live in daily, and we wouldn&apos;t ask you to try it if it
             wasn&apos;t.
           </p>
@@ -51,7 +59,7 @@ export default function WhyPage() {
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Want in?</h2>
           <p>
-            droppdd is a small, capped beta.{" "}
+            droppdd is a capped, invite-only beta.{" "}
             <a href="/request-access" className="font-black text-brand-orange hover:text-white transition-colors no-underline">
               Request access
             </a>{" "}

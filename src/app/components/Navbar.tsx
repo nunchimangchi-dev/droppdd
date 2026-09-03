@@ -251,7 +251,7 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
               DROPPDD<span className="text-brand-text">.</span>
             </span>
             <span className="text-[10px] tracking-[0.2em] font-extrabold text-brand-text-muted block mt-1 uppercase">
-              AGGRESSIVE ATHLETICISM
+              ONE CHECK-IN A DAY
             </span>
           </Link>
         </div>

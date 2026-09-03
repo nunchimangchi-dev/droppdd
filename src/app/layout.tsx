@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DROPPDD // Aggressive Fitness & Fasting",
-  description: "High-intensity keto guided workouts, aggressive OMAD tracking, and raw athletic conditioning. No soft wellness. Pure action.",
+  title: "DROPPDD // You already know what to eat. This is for actually doing it.",
+  description:
+    "An invite-only beta for holding a line on how you eat, whatever the method: keto, OMAD, calorie targets, or both. One daily check-in matched to your method, a streak, and a friendly wager. No food diary. No macro math.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -73,7 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 DROPPDD<span className="text-zinc-50">.</span>
               </span>
               <span className="text-[7px] tracking-[0.3em] font-black text-zinc-600 uppercase mt-0.5">
-                AGGRESSIVE ATHLETICISM
+                ONE CHECK-IN A DAY
               </span>
             </div>
             

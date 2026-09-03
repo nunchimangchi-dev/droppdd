@@ -1995,3 +1995,39 @@ target today" + "Your target: 1800 kcal, 150g protein" -> `/profile`
 change approach to Keto + OMAD -> success banner -> DB shows
 `persona=KETO_OMAD`, note preserved. Streak unaffected (checkin.ts
 untouched).
+
+## 2026-09-03 - Site copy: four-persona reposition (from Pitch)
+
+### What
+Implemented the approved site copy (`drafts/dropp-site-copy.md` in the
+pitch repo) so `/signin` and `/why` match the four-persona onboarding
+instead of pitching OMAD/keto only. Copy-only, no schema or logic change.
+
+- Tagline: "Aggressive Fitness & Fasting" / "NO EXCUSES. NO WEAKNESS.
+  ONLY RESULTS." replaced by "You already know what to eat. This is for
+  actually doing it." Full line on `/signin` (under EST. 2026) and in the
+  `<title>`. The tiny sidebar/mobile chrome sub-label got a short variant,
+  "ONE CHECK-IN A DAY" (my call, flagged to Pitch, easily changed).
+- `/signin`: new pitch paragraph (method-neutral); front feature grid now
+  leads with the loop - CHECK-IN / WAGERS / STREAK / LEADERBOARD (WORKOUTS
+  + AI MEALS drop off the front grid, still in-app). "DAILY ASSAULT" line
+  softened to "AUTHENTICATE TO START YOUR CHECK-IN STREAK".
+- `/why`: kept the spine; method line added to "why we built it"; moat
+  made explicit in "what makes it work"; wager line set to "honor system,
+  no money changes hands". CTA already pointed at `/request-access`.
+- `/request-access`: intro line de-keto'd, "small" struck.
+- De-dashed every edited surface (user + Pitch keep copy em-dash-free).
+
+### Pitch's flags, resolved
+1. `/why` "real-money / stakes-based" wager line - misread; the page never
+   said that (only `welcome/page.tsx` mentions real money, correctly says
+   *no* real money). Folded in Pitch's cleaner honor-system sentence anyway.
+2. AI meal planner still keto-only - left soft in the copy, persona-
+   awareness still a fast-follow.
+
+### Manual test plan
+`npm run lint` + `npm run build` pass. Local browser: `/signin` renders
+the new tagline, pitch paragraph, and CHECK-IN/WAGERS/STREAK/LEADERBOARD
+grid; `/why` full text verified (method insert, moat line, honor-system
+wager line, no em-dashes, CTA -> /request-access); sidebar shows "ONE
+CHECK-IN A DAY".

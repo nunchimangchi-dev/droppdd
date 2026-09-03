@@ -32,20 +32,26 @@ export default function SignInPage() {
               </span>
               <span className="h-[1px] w-8 bg-brand-border" />
             </div>
+            <p className="text-[11px] text-brand-text font-black uppercase tracking-wide leading-relaxed max-w-xs mx-auto pt-2">
+              You already know what to eat. This is for actually doing it.
+            </p>
           </div>
 
           <p className="text-xs text-brand-text-muted font-bold uppercase tracking-wide leading-relaxed max-w-sm mx-auto">
-            A small, invite-only beta for keto/OMAD training: guided workouts,
-            AI-generated meal plans, weight &amp; streak tracking, and
-            accountability wagers against yourself or a friend.
+            An invite-only beta for people holding a line on how they eat, whatever
+            the method: keto, OMAD, calorie targets, or keto and OMAD together. One
+            daily check-in matched to your method, a streak you don&apos;t want to
+            break, and a friendly wager with someone who&apos;ll notice if you slip.
+            Guided workouts and meal help are in there too. No food diary. No macro
+            math.
           </p>
 
           <div className="grid grid-cols-2 gap-3 text-left max-w-sm mx-auto">
             {[
-              ["WORKOUTS", "Guided keto/OMAD training programs"],
-              ["AI MEALS", "Pantry or macro-driven recipe generation"],
-              ["WAGERS", "Solo or peer accountability, honor system"],
-              ["LEADERBOARD", "Relative progress only, never raw numbers"],
+              ["CHECK-IN", "One prompt a day, matched to your method. Ten seconds."],
+              ["WAGERS", "Solo or against a friend. Honor system, no money."],
+              ["STREAK", "The number you're protecting. Days strong, not pounds."],
+              ["LEADERBOARD", "Relative progress only. Never raw numbers."],
             ].map(([label, desc]) => (
               <div key={label} className="border border-brand-border p-3">
                 <p className="text-[9px] font-black text-brand-orange uppercase tracking-wider">{label}</p>
@@ -59,10 +65,10 @@ export default function SignInPage() {
               OPERATIONAL ACCESS REQUIRED
             </h1>
             <p className="text-[10px] text-brand-text-muted font-extrabold uppercase tracking-[0.2em] leading-relaxed max-w-[240px] mx-auto">
-              AUTHENTICATE TO COMMENCE DAILY ASSAULT AND TRACK CONDITIONING
+              AUTHENTICATE TO START YOUR CHECK-IN STREAK
             </p>
             <p className="text-[9px] text-brand-text-muted/60 font-black tracking-widest uppercase">
-              REQUIRES A GOOGLE ACCOUNT &mdash; FREE TO CREATE IF YOU DON&apos;T HAVE ONE
+              REQUIRES A GOOGLE ACCOUNT. FREE TO CREATE IF YOU DON&apos;T HAVE ONE
             </p>
           </div>
 
@@ -82,9 +88,6 @@ export default function SignInPage() {
           </form>
 
           <div className="pt-4 space-y-3">
-            <p className="text-[9px] text-brand-text-muted/60 font-black tracking-widest uppercase">
-              NO EXCUSES. NO WEAKNESS. ONLY RESULTS.
-            </p>
             <p className="text-[10px] font-black uppercase tracking-widest">
               <span className="text-brand-text-muted/60">NOT ON THE LIST? </span>
               <a href="/request-access" className="text-brand-orange hover:text-white transition-colors">
