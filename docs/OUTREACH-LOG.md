@@ -27,7 +27,8 @@ out, so this stays the single source of truth for outreach.
 |---|---|---|---|---|---|
 | 2026-08-26 | Mom | harleysfleas@yahoo.com | Personal email invite | Allowlisted (member) | Confirmed connecting 2026-08-28 |
 | 2026-08-26 | davidjwlee | davidjwlee@gmail.com | Personal invite | Allowlisted (**admin**) | Confirmed connecting 2026-08-28 |
-| 2026-09-03 | Taras | — | Personal DM (`dropp-invite` template, variant A — short) | Invited — awaiting response | First real send of the approved outreach template. |
+| 2026-09-03 | Taras | (not recorded) | Personal DM (`dropp-invite` template, variant A, short) | Invited, awaiting response | First real send of the approved outreach template. |
+| 2026-09-03 | Danny Valdez | dvaldez1@gmail.com (submitted; a first try used `.con` by typo) | dropp-invite template variant A | Requested access, email pending verification | Replied "nice, an accountability app, I need that" and submitted `/request-access`. Two queue rows: `dvaldez1@gmail.con` (typo) then `dvaldez1@gmail.com` ~2 min later. Not allowlisted until Warren confirms the address. |
 
 ## Public outreach posts
 
