@@ -2031,3 +2031,37 @@ the new tagline, pitch paragraph, and CHECK-IN/WAGERS/STREAK/LEADERBOARD
 grid; `/why` full text verified (method insert, moat line, honor-system
 wager line, no em-dashes, CTA -> /request-access); sidebar shows "ONE
 CHECK-IN A DAY".
+
+## 2026-09-04 — Cloudflare Web Analytics beacon
+
+### What
+Added the Cloudflare Web Analytics beacon to the root layout so real
+external-visitor pageviews are actually counted going forward.
+
+Background: Warren (via ops) asked how many real visitors droppdd has had.
+Cloudflare's free plan only retains 24h of per-hostname edge analytics, and
+no RUM beacon was installed, so there was no historical real-visitor count
+to pull. The 24h snapshot was ~800 edge requests / ~5-6 distinct browser
+IPs, zero bot/health-check traffic at the edge (the blackbox_exporter
+probes never traverse Cloudflare — they hit the tunnel origin directly).
+
+### Change
+- `src/app/layout.tsx`: `import Script from "next/script"`, and a
+  `<Script strategy="afterInteractive">` for
+  `https://static.cloudflareinsights.com/beacon.min.js` with
+  `data-cf-beacon` carrying the site token. One file, +7 lines.
+- Cloudflare side: created a Web Analytics site for
+  `droppdd.alwaysgivealwaysget.com` (site_tag `ab6bd4b909a54a6ea169db97c8607ef0`,
+  `auto_install: false` so only this explicit tag injects it — no
+  double-count with the zone-level auto-install, which is scoped to
+  nunchimangchi.com only). The beacon token is a public client-side key,
+  not a secret.
+- No schema change, no package.json change, no CSP to amend (droppdd sets
+  none). Cookieless; no consent banner needed.
+
+### Manual test plan
+`npm run lint` (exit 0) + `npm run build` ("Compiled successfully") pass.
+Local `npm run start`: `/signin` HTML carries the beacon src +
+`data-cf-beacon` token; `/api/health` 200. Post-deploy: load droppdd in a
+real browser, confirm `beacon.min.js` fetches 200 and a hit lands in the
+Cloudflare Web Analytics dashboard for the new site.

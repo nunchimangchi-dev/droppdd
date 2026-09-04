@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import { auth, signOut } from "@/auth";
@@ -137,6 +138,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </main>
         </div>
+        {/* Cloudflare Web Analytics: real-visitor pageviews, bot-filtered, cookieless. Token is a public client-side beacon key. */}
+        <Script
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          strategy="afterInteractive"
+          data-cf-beacon={JSON.stringify({ token: "e718840e5a794f29b5b8d340a30c75ab" })}
+        />
       </body>
     </html>
   );
