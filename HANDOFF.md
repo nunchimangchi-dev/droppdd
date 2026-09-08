@@ -2065,3 +2065,59 @@ Local `npm run start`: `/signin` HTML carries the beacon src +
 `data-cf-beacon` token; `/api/health` 200. Post-deploy: load droppdd in a
 real browser, confirm `beacon.min.js` fetches 200 and a hit lands in the
 Cloudflare Web Analytics dashboard for the new site.
+
+## 2026-09-08: Mobile / pre-auth first-impression pass
+
+### Why
+Invite target Taras gave first-impression feedback (relayed via pitch,
+2026-09-08): the `/why` page reads as "too much text" on a phone and "the
+site doesn't look optimized for mobile." Every invite that goes out lands
+a logged-out visitor on this surface, so it is worth fixing before the
+next recruiting wave.
+
+### Root cause
+The root layout rendered the full app chrome for everyone: the desktop
+sidebar, the mobile top header, and the mobile bottom navigation with all
+9-10 app tabs. On a phone, a logged-out invitee on `/signin`, `/why`, or
+`/request-access` got a 9-item tab bar crushed edge to edge plus an app
+header stacked over the marketing copy, all linking into auth-gated
+routes they cannot use. On top of that the auth-card wordmark
+(`text-5xl` + `tracking-[0.25em]` + skew) and the Turnstile iframe
+(~300px fixed) overflowed the card interior on narrow screens.
+
+### Changes (branch `fix/mobile-preauth`)
+- `src/app/layout.tsx`: gate `<Navbar>`, the mobile `<header>`, and the
+  padded content container on `Boolean(session?.user?.id)`. Logged-out
+  visitors only ever reach the marketing / auth pages, which own their
+  full-bleed layout, so they now render with no app chrome and no outer
+  padding. Authed users are unchanged.
+- `src/app/signin/page.tsx`, `src/app/request-access/page.tsx`: card
+  padding `p-10` -> `p-6 sm:p-10`; wordmark `text-5xl` -> `text-4xl
+  sm:text-5xl` with `tracking-[0.15em] sm:tracking-[0.25em]`; the big
+  offset shadow scaled down on mobile.
+- `src/app/request-access/page.tsx`: wrap the Turnstile widget in an
+  `overflow-x-auto` / `min-w-[300px]` row so a narrow phone scrolls the
+  widget locally instead of the whole page going wide.
+- `src/app/why/page.tsx`: add its own `px-4 py-10 sm:px-6 sm:py-12`
+  wrapper since the layout no longer supplies page padding when
+  logged out.
+- `src/app/globals.css`: `overflow-x: hidden` on `body` as a backstop
+  against any stray wide child forcing a horizontal scrollbar.
+
+### Not in this pass
+- `/why` copy length is a wording cut, owned by pitch; requested
+  separately, will land on top of this.
+- The authed mobile bottom nav still crowds 9-10 tabs into phone width.
+  Logged-out visitors no longer see it, but it is a real issue for signed
+  in users on a phone and is the obvious next item.
+
+### Verification
+`npm run lint` (changed files, exit 0) and `npm run build` (clean,
+Compiled successfully) pass. Local `npm run start`: unauthenticated
+`curl` of `/signin`, `/why`, `/request-access` confirms the bottom nav,
+mobile header, and sidebar markup are all absent, the new responsive
+classes are present, and `overflow-x:hidden` is in the shipped CSS
+bundle. Pixel-level phone screenshot not captured: the Chrome instance in
+this environment stays at desktop width and the browser session was
+authenticated, so the visual check was structural (HTML/CSS/build), not a
+rendered mobile screenshot.

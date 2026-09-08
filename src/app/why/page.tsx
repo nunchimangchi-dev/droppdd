@@ -2,7 +2,7 @@ const CONTACT_EMAIL = "admin.nunchimangchi@gmail.com";
 
 export default function WhyPage() {
   return (
-    <div className="space-y-8 animate-fade-in max-w-3xl mx-auto">
+    <div className="space-y-8 animate-fade-in max-w-3xl mx-auto px-4 py-10 sm:px-6 sm:py-12">
       <div className="relative border-l-8 border-brand-orange pl-6 md:pl-8 py-4 bg-brand-card/40 backdrop-blur-sm border-r border-y border-brand-border">
         <h1 className="heading-mega">
           WHY WE <span className="text-brand-orange">BUILT THIS</span>

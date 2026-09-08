@@ -31,9 +31,9 @@ export default async function RequestAccessPage({
       <div className="relative w-full max-w-lg px-6">
         <div className="absolute -inset-1 bg-brand-orange/10 blur-2xl rounded-full pointer-events-none" />
 
-        <div className="relative bg-brand-card border-2 border-brand-border p-10 space-y-8 shadow-[20px_20px_0px_0px_rgba(0,0,0,1),21px_21px_0px_0px_rgba(34,34,38,1)]">
+        <div className="relative bg-brand-card border-2 border-brand-border p-6 sm:p-10 space-y-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1),9px_9px_0px_0px_rgba(34,34,38,1)] sm:shadow-[20px_20px_0px_0px_rgba(0,0,0,1),21px_21px_0px_0px_rgba(34,34,38,1)]">
           <div className="space-y-2 text-center">
-            <span className="font-black tracking-[0.25em] text-5xl text-brand-orange italic block transform -skew-x-6">
+            <span className="font-black tracking-[0.15em] sm:tracking-[0.25em] text-4xl sm:text-5xl text-brand-orange italic block transform -skew-x-6">
               DROPPDD<span className="text-brand-text">.</span>
             </span>
             <div className="flex items-center justify-center gap-2">
@@ -126,12 +126,19 @@ export default async function RequestAccessPage({
                   />
                 </div>
 
-                <div
-                  className="cf-turnstile"
-                  data-sitekey={TURNSTILE_SITEKEY}
-                  data-action="request_access"
-                  data-theme="dark"
-                />
+                {/* Turnstile renders a fixed ~300px iframe; on a narrow phone
+                    that is wider than the card interior, so keep any overflow
+                    local to this row instead of pushing the whole page wide. */}
+                <div className="overflow-x-auto">
+                  <div className="flex justify-center min-w-[300px]">
+                    <div
+                      className="cf-turnstile"
+                      data-sitekey={TURNSTILE_SITEKEY}
+                      data-action="request_access"
+                      data-theme="dark"
+                    />
+                  </div>
+                </div>
 
                 <button type="submit" className="btn-assault w-full py-5 cursor-pointer">
                   <span>SUBMIT REQUEST</span>

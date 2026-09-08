@@ -60,15 +60,26 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     await signOut({ redirectTo: "/signin" });
   };
 
+  // Logged-out visitors only ever reach the marketing / auth pages (/signin,
+  // /why, /request-access, /legal/*). Those pages own their full-bleed layout,
+  // so the app chrome (sidebar, mobile header, mobile bottom nav) and the
+  // padded content container are only rendered once there's a real session.
+  // Without this, a first-time invitee on a phone gets a 10-item app tab bar
+  // and an app header stacked over the marketing copy.
+  const isAuthed = Boolean(session?.user?.id);
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
       <body className="min-h-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans flex flex-col md:flex-row">
-        <Navbar userEmail={session?.user?.email ?? null} username={username} signOutAction={signOutAction} isAdmin={isAdmin} currentStreak={currentStreak} />
+        {isAuthed && (
+          <Navbar userEmail={session?.user?.email ?? null} username={username} signOutAction={signOutAction} isAdmin={isAdmin} currentStreak={currentStreak} />
+        )}
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Mobile Header */}
+          {isAuthed && (
           <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-900 bg-zinc-950 sticky top-0 z-40 shadow-xl">
             <div className="flex flex-col">
               <span className="font-black tracking-widest text-xl text-orange-500 italic leading-none">
@@ -132,9 +143,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               )}
             </div>
           </header>
+          )}
 
           {/* Main content container */}
-          <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12 pb-24 md:pb-12 max-w-5xl w-full mx-auto">
+          <main
+            className={
+              isAuthed
+                ? "flex-1 p-4 sm:p-6 md:p-8 lg:p-12 pb-24 md:pb-12 max-w-5xl w-full mx-auto"
+                : "flex-1 w-full"
+            }
+          >
             {children}
           </main>
         </div>
