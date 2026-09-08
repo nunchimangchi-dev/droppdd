@@ -16,43 +16,25 @@ export default function WhyPage() {
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Why we built it</h2>
           <p>
-            OMAD (one meal a day) is what worked fastest for us, faster than anything
-            else we tried. But the eating part was never really the hard part. The hard
-            part was staying consistent past the first week, when nobody is checking in.
-            Every tracking app we tried turned into a chore: log every bite, count every
-            macro, quit by week two.
+            OMAD is what worked fastest for us. But the eating was never the hard
+            part. The hard part was staying consistent past the first week, when
+            nobody&apos;s checking. Every tracking app we tried made that worse: log
+            every bite, count every macro, quit by week two.
           </p>
           <p>
-            droppdd doesn&apos;t care whether you do keto, OMAD, count calories, or stack
-            keto and OMAD together. You pick your method in setup and the daily check-in
-            matches it. The hard part was never which diet. It&apos;s doing it tomorrow,
-            and the day after that. So we built the simplest version of what we actually
-            needed: log one thing a day, and have someone real to answer to.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">What makes it work</h2>
-          <p>
-            No food diary. No macro math. You log one thing a day and get on with your
-            life. Every tracking app we tried turned eating into data entry until we
-            stopped opening them. This is the opposite of that.
-          </p>
-          <p>
-            The other half is wagers. You can challenge someone you know to a friendly
-            bet tied to real progress, not just a self-reported claim. The wager is honor
-            system. No money changes hands. The point is having someone who&apos;ll know,
-            not the stakes.
+            So we built the simplest thing that keeps you honest. Pick your method in
+            setup: keto, OMAD, calorie targets, or both. Once a day you check in and
+            it matches whatever you picked. No food diary. No macro math. The other
+            half is a friendly wager with someone you know. Honor system, no money,
+            just someone who&apos;ll notice if you slip.
           </p>
         </section>
 
         <section>
           <h2 className="text-sm font-black text-brand-text uppercase tracking-wider mb-2">Why we&apos;re confident</h2>
           <p>
-            We&apos;ve been using droppdd ourselves, every day, since before anyone else
-            ever saw it. This isn&apos;t a &quot;maybe this works&quot; pitch. It&apos;s
-            something we live in daily, and we wouldn&apos;t ask you to try it if it
-            wasn&apos;t.
+            We&apos;ve used droppdd every day since before anyone else saw it. We
+            wouldn&apos;t ask you to try it if we didn&apos;t.
           </p>
         </section>
 
