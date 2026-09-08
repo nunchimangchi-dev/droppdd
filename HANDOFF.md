@@ -2121,3 +2121,15 @@ bundle. Pixel-level phone screenshot not captured: the Chrome instance in
 this environment stays at desktop width and the browser session was
 authenticated, so the visual check was structural (HTML/CSS/build), not a
 rendered mobile screenshot.
+
+### 2026-09-08 follow-up: /why copy trim (shipped)
+
+pitch delivered the copy cut (pitch/drafts/dropp-site-copy.md, "/why trim
+v2"). Body ~285 words / 5 sections to ~128 / 3: "Why we built it" (2
+paragraphs, method + no-diary + wager folded in), "Why we're confident"
+(2 sentences), "Want in?" (unchanged). "What makes it work" removed, its
+one non-duplicated point (the wager) moved into paragraph 2 of section 1.
+"Get in touch" untouched. Commit 72b365a. lint + build clean, dash-clean,
+deployed to prod, live page verified: 4 sections, new phrasing present,
+zero em/en dashes. Remaining open item from this pass: the authed mobile
+bottom nav still crowds 9-10 tabs into phone width.
