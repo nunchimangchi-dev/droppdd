@@ -2133,3 +2133,20 @@ one non-duplicated point (the wager) moved into paragraph 2 of section 1.
 deployed to prod, live page verified: 4 sections, new phrasing present,
 zero em/en dashes. Remaining open item from this pass: the authed mobile
 bottom nav still crowds 9-10 tabs into phone width.
+
+## 2026-09-09: Mobile authenticated-app pass, batch 1
+
+Warren tested droppdd on an iPhone 17 Pro Max (Firefox) and could not use the core authenticated app: check-in, streak, dashboard, leaderboard were not just rough but unusable. Two global blockers had to be fixed before he could even produce a per-screen list. Invites are held until the authenticated app works on mobile.
+
+### Changes (branch fix/mobile-app-batch1)
+
+- src/app/components/Navbar.tsx: the mobile bottom bar rendered all 9-10 nav items edge to edge, so labels collided and icons lost alignment. It now shows only the daily-loop destinations (Dashboard, Check-in, Attack, Meals, Leaderboard) plus a "More" button; Progress, Wagers, Profile, Board, and Admin move into a "More" sheet that opens above the bar (client state, backdrop to dismiss). Labels dropped the heavy tracking, bumped to a readable size, truncate rather than wrap. Removed the active-item scale-110 that shifted the whole row. Fixed the invalid h-18 / pb-safe classes (now h-16 plus env(safe-area-inset-bottom)).
+- src/app/globals.css: mobile readability floor. The design uses ~350 call sites of 8-11px hard-pixel type with tight tracking, fine on the desktop sidebar layout, unreadable on a phone. Added a @media (max-width: 767px) block that raises the generated Tailwind arbitrary-value tiers (text-[8px]..text-[11px]) and text-xs, and loosens leading. Targets the generated classes directly so it covers every screen without editing call sites; sits after the framework import so source order wins, no !important. Desktop untouched. .label-micro also bumped on mobile, restored at md.
+
+### Not in this batch
+
+Per-screen functional fixes (dashboard grid, check-in form, leaderboard table). Warren produces that ranked list after re-testing on the device with a usable app.
+
+### Verification
+
+npm run lint and npm run build pass (26/26 static pages). The @media (max-width:767px) block is confirmed in the shipped CSS bundle. Dash-clean. Pixel-level mobile verification is Warren's on the 17 Pro Max this round: the Chrome tooling here cannot emulate a mobile viewport, and the changed screens are auth-gated so they cannot be smoke-tested unauthenticated.

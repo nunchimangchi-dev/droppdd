@@ -1,7 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+// The mobile bottom bar shows only the daily-loop destinations; everything
+// else moves behind a "More" sheet. 10 tabs crammed edge to edge was
+// unusable on a phone (reported on an iPhone 17 Pro Max).
+const MOBILE_PRIMARY_HREFS = ["/", "/checkin", "/attack", "/meals", "/leaderboard"];
 
 interface NavItem {
   label: string;
@@ -19,6 +25,7 @@ interface NavbarProps {
 
 export default function Navbar({ userEmail, username = null, signOutAction, isAdmin = false, currentStreak = 0 }: NavbarProps) {
   const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Helper to determine if path is active (exact match, or sub-path match for nested pages)
   const isActive = (href: string) => {
@@ -241,6 +248,10 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
     });
   }
 
+  const mobilePrimary = navItems.filter((i) => MOBILE_PRIMARY_HREFS.includes(i.href));
+  const mobileSecondary = navItems.filter((i) => !MOBILE_PRIMARY_HREFS.includes(i.href));
+  const mobileSecondaryActive = mobileSecondary.some((i) => isActive(i.href));
+
   return (
     <>
       {/* DESKTOP SIDEBAR */}
@@ -316,29 +327,73 @@ export default function Navbar({ userEmail, username = null, signOutAction, isAd
         </div>
       </aside>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-brand-card/95 backdrop-blur-md border-t border-brand-border flex items-center justify-around px-4 pb-safe z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        {navItems.map((item) => {
+      {/* MOBILE "MORE" SHEET: secondary destinations */}
+      {moreOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setMoreOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/60 z-50 cursor-default"
+        />
+      )}
+      {moreOpen && (
+        <div className="md:hidden fixed bottom-16 left-0 right-0 z-50 bg-brand-card border-t border-brand-border shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+          {mobileSecondary.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setMoreOpen(false)}
+                className={`flex items-center gap-4 px-6 py-4 border-b border-brand-border/60 last:border-b-0 font-black text-xs tracking-widest uppercase ${
+                  active ? "text-brand-orange" : "text-brand-text-muted"
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MOBILE BOTTOM NAVIGATION: daily-loop destinations plus More */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-brand-card/95 backdrop-blur-md border-t border-brand-border flex items-stretch justify-around px-1 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {mobilePrimary.map((item) => {
           const active = isActive(item.href);
           return (
             <Link
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full py-3 transition-all duration-200 ${
-                active 
-                  ? "text-brand-orange scale-110" 
-                  : "text-brand-text-muted hover:text-brand-text"
+              onClick={() => setMoreOpen(false)}
+              className={`flex flex-col items-center justify-center flex-1 min-w-0 gap-1 transition-colors duration-200 ${
+                active ? "text-brand-orange" : "text-brand-text-muted hover:text-brand-text"
               }`}
             >
-              <div className={`${active ? "drop-shadow-[0_0_8px_rgba(255,84,0,0.4)]" : ""}`}>
-                {item.icon}
-              </div>
-              <span className={`text-[8px] font-black tracking-[0.15em] uppercase mt-1.5 ${active ? "opacity-100" : "opacity-60"}`}>
+              <span className={active ? "drop-shadow-[0_0_8px_rgba(255,84,0,0.4)]" : ""}>{item.icon}</span>
+              <span className="text-[10px] font-black tracking-tight uppercase leading-none truncate max-w-full">
                 {item.label}
               </span>
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          aria-label="More"
+          className={`flex flex-col items-center justify-center flex-1 min-w-0 gap-1 transition-colors duration-200 cursor-pointer ${
+            moreOpen || mobileSecondaryActive ? "text-brand-orange" : "text-brand-text-muted hover:text-brand-text"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+          <span className="text-[10px] font-black tracking-tight uppercase leading-none">MORE</span>
+        </button>
       </nav>
     </>
   );

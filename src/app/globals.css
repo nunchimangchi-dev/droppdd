@@ -91,5 +91,23 @@ body {
 
 /* micro-label for high-intensity metadata */
 .label-micro {
-  @apply text-[10px] tracking-[0.2em] font-extrabold text-brand-text-muted uppercase;
+  @apply text-[11px] tracking-[0.12em] md:text-[10px] md:tracking-[0.2em] font-extrabold text-brand-text-muted uppercase;
+}
+
+/*
+  MOBILE READABILITY FLOOR
+  The design uses a lot of 8-11px hard-pixel type plus tight tracking, which is
+  fine on a desktop sidebar layout but unreadable on a phone (reported on an
+  iPhone 17 Pro Max). Raise the smallest tiers and loosen leading, mobile only
+  (below the md breakpoint). Desktop is untouched. This targets the generated
+  Tailwind arbitrary-value classes directly so it covers every screen without
+  editing 350+ call sites; it sits after the framework import so source order
+  wins with no !important.
+*/
+@media (max-width: 767px) {
+  .text-\[8px\]  { font-size: 10px; line-height: 1.35; }
+  .text-\[9px\]  { font-size: 11px; line-height: 1.35; }
+  .text-\[10px\] { font-size: 11px; line-height: 1.4; }
+  .text-\[11px\] { font-size: 12px; line-height: 1.45; }
+  .text-xs       { font-size: 0.8125rem; line-height: 1.4; }
 }
