@@ -2150,3 +2150,46 @@ Per-screen functional fixes (dashboard grid, check-in form, leaderboard table). 
 ### Verification
 
 npm run lint and npm run build pass (26/26 static pages). The @media (max-width:767px) block is confirmed in the shipped CSS bundle. Dash-clean. Pixel-level mobile verification is Warren's on the 17 Pro Max this round: the Chrome tooling here cannot emulate a mobile viewport, and the changed screens are auth-gated so they cannot be smoke-tested unauthenticated.
+
+## 2026-09-15: NUNCHI-BOARD metrics export (machine-to-machine)
+
+Picks up the pivot from the abandoned 2026-09-14 session ("Tailscale SSH
+access control"), which dead-ended trying to grant box an unattended
+Tailscale SSH ACL exception (two rejected `src` syntaxes) instead of
+building this. career-coach's NUNCHI-BOARD wants droppdd's streak and
+weight-goal-% for the board Warren annotates on his tablet.
+
+### Changes (branch feature/nunchi-board-metrics-export)
+
+- `src/app/api/metrics/nunchi-board/route.ts`: new GET route, bearer-token
+  auth via `METRICS_EXPORT_TOKEN` (not session/cookie auth — the caller
+  is an unattended systemd timer on box, not a browser). Resolves the
+  target user via `OWNER_USER_EMAIL` rather than hardcoding an identity,
+  since this repo is public. Returns `droppddStreak`
+  (`Progress.currentStreak`) and `weightProgressPercent` (reuses
+  `computeGoalPercent`, the exact function behind the `/progress` page's
+  bar — floors at 5%, caps at 100%, not raw linear math) plus
+  `droppddUpdatedAt`. `/api` is already excluded from proxy.ts's
+  session-auth matcher, so this route does its own check rather than
+  relying on that exclusion.
+- Two new prod-only env vars required, not present locally:
+  `METRICS_EXPORT_TOKEN`, `OWNER_USER_EMAIL`. No `.env.example` exists in
+  this repo to update.
+
+### Verification
+
+npm run lint clean. npm run build clean (27/27 static pages, new route
+listed). Local smoke test against all three failure branches: missing
+server config → 503, wrong bearer token → 401, right token with no
+matching user (local DB has no row for the configured email) → 404. The
+200 success path with real data is only verifiable against prod's actual
+user record — not tested locally, low risk since it's a direct field
+read plus the same goal-percent function already exercised by
+`/progress` and `/leaderboard`.
+
+### Not in this batch
+
+The box-side puller (systemd timer, curl + write into
+`~/career-ops-data/nunchi-board-state.json`) is a skyrise-repo change,
+not this repo. career-coach's NUNCHI-BOARD renderer has not confirmed
+the field contract yet — proposed, not yet acknowledged.
