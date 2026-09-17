@@ -48,14 +48,19 @@ export function isDayMet(c: DayRecord): boolean {
 // Recomputed from full history every time rather than incrementally
 // maintained - avoids "did I already count today" edge cases entirely
 // (e.g. correcting an earlier entry the same day). Cheap enough at this
-// scale; correctness over micro-optimization.
-export function computeCurrentStreak(checkIns: DayRecord[]): number {
-  const sorted = [...checkIns].sort((a, b) => b.checkInDate.getTime() - a.checkInDate.getTime());
+// scale; correctness over micro-optimization. Shared by every streak this
+// app computes (main + mindfulness) - same consecutive-day walk, different
+// "was this day met" predicate.
+function computeStreakFromDays<T extends { checkInDate: Date }>(
+  days: T[],
+  isMet: (day: T) => boolean
+): number {
+  const sorted = [...days].sort((a, b) => b.checkInDate.getTime() - a.checkInDate.getTime());
   let streak = 0;
   let expected = new Date();
 
   for (const c of sorted) {
-    if (!isDayMet(c)) break;
+    if (!isMet(c)) break;
 
     if (streak === 0) {
       const yesterday = new Date(expected);
@@ -73,6 +78,19 @@ export function computeCurrentStreak(checkIns: DayRecord[]): number {
   }
 
   return streak;
+}
+
+export function computeCurrentStreak(checkIns: DayRecord[]): number {
+  return computeStreakFromDays(checkIns, isDayMet);
+}
+
+// Independent of the main streak - no rest-day interaction. Rest days are
+// specifically a pass on the 3 core habits (strength/movement/eating);
+// mindfulness doesn't participate in that concept.
+export function computeMindfulnessStreak(
+  checkIns: { checkInDate: Date; mindfulnessMet: boolean }[]
+): number {
+  return computeStreakFromDays(checkIns, (c) => c.mindfulnessMet);
 }
 
 // Eligible once every REST_DAY_INTERVAL_DAYS, floating - not tied to a

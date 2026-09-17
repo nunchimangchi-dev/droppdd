@@ -40,6 +40,11 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     droppddStreak: progress.currentStreak,
+    // Only meaningful once mindfulnessEnabled is on for this user - reads 0
+    // otherwise, same as any other user who hasn't opted in. Field name is
+    // droppdd's own domain term; the NUNCHI-BOARD pull script (not this
+    // route) owns the decision of what tablet-side key it lands in.
+    mindfulnessStreak: progress.mindfulnessStreak,
     weightProgressPercent: computeGoalPercent(
       progress.startWeight,
       progress.currentWeight,

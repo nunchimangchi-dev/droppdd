@@ -77,6 +77,13 @@ model Progress {
   // gate the streak (see DailyCheckIn.mindfulnessMet) - self-defined habit,
   // we track execution only, never define or judge the activity.
   mindfulnessEnabled Boolean @default(false)
+  // Cached, same pattern as currentStreak/bestStreak: fully recomputed from
+  // real DailyCheckIn.mindfulnessMet history on every check-in (see
+  // computeMindfulnessStreak in src/lib/checkin.ts), never hand-set. A
+  // consecutive-day walk, independent of the main streak - no rest-day
+  // interaction, since rest days are specifically a pass on the 3 core
+  // habits, not a concept mindfulness participates in.
+  mindfulnessStreak Int @default(0)
 }
 
 model AllowedEmail {

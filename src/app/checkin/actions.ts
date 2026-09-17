@@ -6,7 +6,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isSameCalendarDay } from "@/lib/streak";
-import { computeCurrentStreak, isRestDayEligible } from "@/lib/checkin";
+import { computeCurrentStreak, computeMindfulnessStreak, isRestDayEligible } from "@/lib/checkin";
 
 // Unchecked checkboxes come back as `null` from formData.get(), not
 // `undefined` - .optional() alone rejects null, so every field here
@@ -34,12 +34,14 @@ async function recomputeAndSaveStreak(userId: string) {
 
   const checkIns = await prisma.dailyCheckIn.findMany({ where: { userId } });
   const newStreak = computeCurrentStreak(checkIns);
+  const newMindfulnessStreak = computeMindfulnessStreak(checkIns);
 
   await prisma.progress.update({
     where: { id: progress.id },
     data: {
       currentStreak: newStreak,
       bestStreak: Math.max(progress.bestStreak, newStreak),
+      mindfulnessStreak: newMindfulnessStreak,
     },
   });
 }
