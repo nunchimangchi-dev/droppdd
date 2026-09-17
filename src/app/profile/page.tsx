@@ -57,6 +57,7 @@ export default async function ProfilePage({
       mealPreference: true,
       persona: true,
       eatingTargetNote: true,
+      mindfulnessEnabled: true,
     },
   });
 
@@ -256,6 +257,24 @@ export default async function ProfilePage({
                 Shown back to you at check-in. Never tracked or enforced.
               </p>
             </div>
+
+            <fieldset className="space-y-3 border border-brand-border p-4">
+              <legend className="label-micro px-2">MINDFULNESS <span className="text-brand-text-muted/40">(OPTIONAL)</span></legend>
+              <label className="flex items-start gap-3 bg-brand-bg/50 border border-brand-border p-3 cursor-pointer hover:border-brand-border-strong has-[:checked]:border-brand-orange">
+                <input
+                  type="checkbox"
+                  name="mindfulnessEnabled"
+                  defaultChecked={progress.mindfulnessEnabled}
+                  className="mt-0.5 w-4 h-4 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+                />
+                <span>
+                  <span className="block text-xs font-black text-brand-text uppercase">Track mindfulness</span>
+                  <span className="block text-[10px] text-brand-text-muted font-bold uppercase tracking-wide mt-0.5">
+                    Adds a yes/no prompt to your daily check-in. Doesn&apos;t affect your streak.
+                  </span>
+                </span>
+              </label>
+            </fieldset>
 
             <div className="pt-2">
               <button type="submit" className="btn-assault w-full">

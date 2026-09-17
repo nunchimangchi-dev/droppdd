@@ -21,6 +21,7 @@ const checkInSchema = z.object({
   strengthPlanks: z.literal("on").nullable().optional(),
   movementMet: z.literal("on").nullable().optional(),
   eatingMet: z.literal("on").nullable().optional(),
+  mindfulnessMet: z.literal("on").nullable().optional(),
   weight: z.coerce.number().positive().nullable().optional(),
   weightUnit: z.enum(["LBS", "KG"]).nullable().optional(),
 });
@@ -64,6 +65,7 @@ export async function checkIn(formData: FormData) {
     strengthPlanks: formData.get("strengthPlanks"),
     movementMet: formData.get("movementMet"),
     eatingMet: formData.get("eatingMet"),
+    mindfulnessMet: formData.get("mindfulnessMet"),
     weight: formData.get("weight") || undefined,
     weightUnit: formData.get("weightUnit") || undefined,
   });
@@ -82,6 +84,10 @@ export async function checkIn(formData: FormData) {
   };
   const movementMet = d.movementMet === "on";
   const eatingMet = d.eatingMet === "on";
+  // Recorded whenever submitted, regardless of progress.mindfulnessEnabled -
+  // no authorization concern, it's self-reported data about the submitting
+  // user, and the field is only ever rendered when the user opted in.
+  const mindfulnessMet = d.mindfulnessMet === "on";
 
   const now = new Date();
 
@@ -95,11 +101,11 @@ export async function checkIn(formData: FormData) {
   if (mostRecent && isSameCalendarDay(mostRecent.checkInDate, now)) {
     await prisma.dailyCheckIn.update({
       where: { id: mostRecent.id },
-      data: { ...strengthFlags, movementMet, eatingMet },
+      data: { ...strengthFlags, movementMet, eatingMet, mindfulnessMet },
     });
   } else {
     await prisma.dailyCheckIn.create({
-      data: { userId, checkInDate: now, ...strengthFlags, movementMet, eatingMet },
+      data: { userId, checkInDate: now, ...strengthFlags, movementMet, eatingMet, mindfulnessMet },
     });
   }
 

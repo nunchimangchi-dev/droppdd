@@ -15,6 +15,9 @@ const profileDetailsSchema = z.object({
   mealPreference: z.enum(["CARNIVORE", "VEGETARIAN", "NO_PREFERENCE"]),
   persona: z.enum(EATING_PERSONAS),
   eatingTargetNote: z.string().trim().max(120).nullable().optional(),
+  // Unchecked checkboxes come back as `null`, not `undefined` - needs
+  // .nullable() too or a valid submission with it unchecked gets rejected.
+  mindfulnessEnabled: z.literal("on").nullable().optional(),
 });
 
 const CM_TO_IN = 0.393701;
@@ -33,6 +36,7 @@ export async function updateProfileDetails(formData: FormData) {
     mealPreference: formData.get("mealPreference"),
     persona: formData.get("persona"),
     eatingTargetNote: formData.get("eatingTargetNote") || undefined,
+    mindfulnessEnabled: formData.get("mindfulnessEnabled"),
   });
   if (!parsed.success) {
     redirect("/profile?error=invalid-details");
@@ -41,6 +45,7 @@ export async function updateProfileDetails(formData: FormData) {
   const { age, heightUnit, mealPreference, persona } = parsed.data;
   const heightInches = heightUnit === "CM" ? parsed.data.height * CM_TO_IN : parsed.data.height;
   const eatingTargetNote = parsed.data.eatingTargetNote?.trim() || null;
+  const mindfulnessEnabled = parsed.data.mindfulnessEnabled === "on";
 
   const progress = await prisma.progress.findFirst({ where: { userId } });
   if (!progress) {
@@ -49,7 +54,7 @@ export async function updateProfileDetails(formData: FormData) {
 
   await prisma.progress.update({
     where: { id: progress.id },
-    data: { age, heightInches, mealPreference, persona, eatingTargetNote },
+    data: { age, heightInches, mealPreference, persona, eatingTargetNote, mindfulnessEnabled },
   });
 
   revalidatePath("/profile");

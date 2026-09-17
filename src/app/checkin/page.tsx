@@ -190,6 +190,29 @@ export default async function CheckInPage({
             </label>
           </div>
 
+          {/* Mindfulness - opt-in only (toggled in profile), never gates
+              the streak. Self-defined: we track that it happened, not what
+              "it" is. */}
+          {progress.mindfulnessEnabled && (
+            <div className="space-y-3 border-t-2 border-dashed border-brand-border pt-6">
+              <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-brand-border block" />
+                MINDFULNESS <span className="text-brand-text-muted/60 normal-case font-bold">(doesn&apos;t affect streak)</span>
+              </h2>
+              <label className="flex items-center gap-3 bg-brand-bg/50 border border-brand-border p-4 cursor-pointer hover:border-brand-border-strong">
+                <input
+                  type="checkbox"
+                  name="mindfulnessMet"
+                  defaultChecked={todayCheckIn?.mindfulnessMet ?? false}
+                  className="w-5 h-5 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+                />
+                <span className="text-xs font-bold text-brand-text uppercase">
+                  Did your mindfulness practice today
+                </span>
+              </label>
+            </div>
+          )}
+
           {/* Weight - optional */}
           <div className="space-y-3 border-t-2 border-dashed border-brand-border pt-6">
             <h2 className="text-sm font-black tracking-wider text-brand-text-muted uppercase flex items-center gap-2">

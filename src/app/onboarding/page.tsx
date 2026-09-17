@@ -224,6 +224,25 @@ export default async function OnboardingPage({
             </p>
           </div>
 
+          <fieldset className="space-y-3 border border-brand-border p-4">
+            <legend className="label-micro px-2">MINDFULNESS <span className="text-brand-text-muted/40">(OPTIONAL)</span></legend>
+            <label className="flex items-start gap-3 bg-brand-bg/50 border border-brand-border p-3 cursor-pointer hover:border-brand-border-strong has-[:checked]:border-brand-orange">
+              <input
+                type="checkbox"
+                name="mindfulnessEnabled"
+                className="mt-0.5 w-4 h-4 bg-brand-bg border border-brand-border accent-brand-orange cursor-pointer flex-shrink-0"
+              />
+              <span>
+                <span className="block text-xs font-black text-brand-text uppercase">Track mindfulness</span>
+                <span className="block text-[10px] text-brand-text-muted font-bold uppercase tracking-wide mt-0.5">
+                  Meditation, breathing, whatever you define it as. We only track that you did it - a
+                  simple yes/no at check-in. Doesn&apos;t affect your streak. Change this any time in
+                  your profile.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
           <div className="pt-2">
             <button
               type="submit"

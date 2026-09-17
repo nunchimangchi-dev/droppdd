@@ -18,6 +18,9 @@ const onboardSchema = z.object({
   mealPreference: z.enum(["CARNIVORE", "VEGETARIAN", "NO_PREFERENCE"]),
   persona: z.enum(EATING_PERSONAS),
   eatingTargetNote: z.string().trim().max(120).nullable().optional(),
+  // Unchecked checkboxes come back as `null`, not `undefined` - needs
+  // .nullable() too or a valid submission with it unchecked gets rejected.
+  mindfulnessEnabled: z.literal("on").nullable().optional(),
 });
 
 const KG_TO_LBS = 2.20462;
@@ -49,6 +52,7 @@ export async function onboardUser(formData: FormData) {
     mealPreference: formData.get("mealPreference"),
     persona: formData.get("persona"),
     eatingTargetNote: formData.get("eatingTargetNote") || undefined,
+    mindfulnessEnabled: formData.get("mindfulnessEnabled"),
   });
 
   if (!parsed.success) {
@@ -57,6 +61,7 @@ export async function onboardUser(formData: FormData) {
 
   const { weightUnit, heightUnit, age, mealPreference, persona } = parsed.data;
   const eatingTargetNote = parsed.data.eatingTargetNote?.trim() || null;
+  const mindfulnessEnabled = parsed.data.mindfulnessEnabled === "on";
 
   // Canonical storage units: weight in lbs, height in inches - convert
   // here so the rest of the app (leaderboard, wagers, dashboard) never
@@ -81,6 +86,7 @@ export async function onboardUser(formData: FormData) {
       mealPreference,
       persona,
       eatingTargetNote,
+      mindfulnessEnabled,
     },
   });
 

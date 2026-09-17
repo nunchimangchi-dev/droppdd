@@ -73,6 +73,10 @@ model Progress {
   mealPreference String? // "CARNIVORE" | "VEGETARIAN" | "NO_PREFERENCE"
   persona        String  @default("KETO_OMAD") // "KETO" | "OMAD" | "CALORIE" | "KETO_OMAD" - eating method, drives the check-in "Eating" prompt only (see src/lib/personas.ts)
   eatingTargetNote String? // optional self-set reminder shown at check-in (e.g. "20g carbs, 6-7pm"); never parsed or enforced
+  // Opt-in only, set at onboarding or toggled any time in profile. Does not
+  // gate the streak (see DailyCheckIn.mindfulnessMet) - self-defined habit,
+  // we track execution only, never define or judge the activity.
+  mindfulnessEnabled Boolean @default(false)
 }
 
 model AllowedEmail {
@@ -207,6 +211,11 @@ model DailyCheckIn {
   strengthPlanks        Boolean  @default(false)
   movementMet           Boolean  @default(false)
   eatingMet             Boolean  @default(false)
+  // Only meaningful when the user has Progress.mindfulnessEnabled on.
+  // Recorded whenever submitted regardless of that flag (harmless either
+  // way - self-reported data about the submitting user, nothing to
+  // authorize). Never gates the streak - see isDayMet in src/lib/checkin.ts.
+  mindfulnessMet        Boolean  @default(false)
   // A floating once-every-7-days pass - satisfies the streak for the day
   // without requiring strength/movement/eating. Not tied to a fixed
   // calendar day (e.g. always Sunday) - eligibility is computed from the
