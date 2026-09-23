@@ -1,5 +1,10 @@
 # Beta outreach log
 
+> **Note:** invitee email addresses were redacted from this file on
+> 2026-09-23. They are real people's personal addresses and this repository is
+> public; they should never have been committed here. The live record of who
+> was invited lives in the production allowlist, not in a published document.
+
 Living log of who's been invited and what's gone out publicly. Update as
 things happen: new invite, someone connects, a post goes up, a reply
 comes in. Not auto-generated; kept manually alongside the rest of the
@@ -25,10 +30,10 @@ out, so this stays the single source of truth for outreach.
 
 | Date | Person | Contact | Channel | Status | Notes |
 |---|---|---|---|---|---|
-| 2026-08-26 | Mom | harleysfleas@yahoo.com | Personal email invite | Allowlisted (member) | Confirmed connecting 2026-08-28 |
-| 2026-08-26 | davidjwlee | davidjwlee@gmail.com | Personal invite | Allowlisted (**admin**) | Confirmed connecting 2026-08-28 |
+| 2026-08-26 | Mom | [redacted — H., yahoo.com] | Personal email invite | Allowlisted (member) | Confirmed connecting 2026-08-28 |
+| 2026-08-26 | davidjwlee | [redacted — D., gmail.com] | Personal invite | Allowlisted (**admin**) | Confirmed connecting 2026-08-28 |
 | 2026-09-03 | Taras | (not recorded) | Personal DM (`dropp-invite` template, variant A, short) | Invited, awaiting response | First real send of the approved outreach template. |
-| 2026-09-03 | Danny Valdez | dvaldez1@gmail.com | dropp-invite template variant A | Allowlisted, member | Replied "nice, an accountability app, I need that" and submitted `/request-access` (first try had a `.con` typo, corrected 2 min later). Warren confirmed the address; allowlisted 2026-09-03, typo + fulfilled queue rows dismissed. Warren to notify Danny it's ready (no auto-email on approval). |
+| 2026-09-03 | Danny Valdez | [redacted — D., gmail.com] | dropp-invite template variant A | Allowlisted, member | Replied "nice, an accountability app, I need that" and submitted `/request-access` (first try had a `.con` typo, corrected 2 min later). Warren confirmed the address; allowlisted 2026-09-03, typo + fulfilled queue rows dismissed. Warren to notify Danny it's ready (no auto-email on approval). |
 
 ## Public outreach posts
 
