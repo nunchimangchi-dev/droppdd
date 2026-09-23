@@ -63,6 +63,5 @@ been caught and fixed that way already — see the commit history and
 the generated Prisma client, and two separate CI failures from assumptions
 that only held on a machine with stale build artifacts already on disk).
 
-It exists first as the validation case for
-[skyrise](https://github.com/nunchimangchi-dev/skyrise), proving the dev
-environment/toolchain end to end on a real project.
+It exists first as the validation case for the dev environment and toolchain
+it is built on, proving that setup end to end on a real project.

@@ -2156,7 +2156,7 @@ npm run lint and npm run build pass (26/26 static pages). The @media (max-width:
 Picks up the pivot from the abandoned 2026-09-14 session ("Tailscale SSH
 access control"), which dead-ended trying to grant box an unattended
 Tailscale SSH ACL exception (two rejected `src` syntaxes) instead of
-building this. career-coach's NUNCHI-BOARD wants droppdd's streak and
+building this. An external dashboard consumer wants droppdd's streak and
 weight-goal-% for the board Warren annotates on his tablet.
 
 ### Changes (branch feature/nunchi-board-metrics-export)
@@ -2190,6 +2190,6 @@ read plus the same goal-percent function already exercised by
 ### Not in this batch
 
 The box-side puller (systemd timer, curl + write into
-`~/career-ops-data/nunchi-board-state.json`) is a skyrise-repo change,
-not this repo. career-coach's NUNCHI-BOARD renderer has not confirmed
+the consumer's own state file) is a change in that consumer's repo,
+not this repo. That consumer's renderer has not confirmed
 the field contract yet — proposed, not yet acknowledged.

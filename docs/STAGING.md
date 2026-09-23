@@ -19,7 +19,8 @@ that matters: separate host, separate database, separate service.
 - **Auth**: same Google OAuth client as production (client ID/secret
   reused), with `https://droppdd-staging.tail2b3f17.ts.net:8443/api/auth/callback/google`
   added as a second authorized redirect URI. Allowlist seeded with
-  `nunchimangchi@icloud.com` via `ALLOWED_EMAILS` at seed time.
+  the owner's address via `ALLOWED_EMAILS` at seed time; the real value lives
+  in the environment, not in this document.
 - **Service**: `systemd --user` unit at
   `~/.config/systemd/user/droppdd.service` on the staging host, running as
   user `farmer` (linger enabled so it survives without an active login

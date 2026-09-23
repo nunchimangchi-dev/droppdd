@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { computeGoalPercent } from "@/lib/progress-percent";
 
-// Machine-to-machine pull for the NUNCHI-BOARD (career-ops) export, not a
+// Machine-to-machine pull for an external dashboard consumer, not a
 // user-facing route. /api is excluded from proxy.ts's session-auth
 // matcher (see the comment on the admin export route), so this does its
 // own bearer-token check rather than relying on that exclusion alone.
