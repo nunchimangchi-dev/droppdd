@@ -48,3 +48,7 @@ prisma/dev.db
 /.claude/
 /.windsurf/
 /skills-lock.json
+
+# Internal working notes — build prompts and design briefs. Kept with the
+# project, out of the public repository.
+/private/

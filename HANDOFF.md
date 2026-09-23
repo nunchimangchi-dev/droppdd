@@ -115,7 +115,7 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     error state, not a silent half-broken app.
   - **Update — real end-to-end Google sign-in now verified.** Tested via
     browser automation against a connected Mac's Chrome, hitting the actual
-    `tailscale serve` production URL (`https://box.tail2b3f17.ts.net/`,
+    `tailscale serve` production URL (`https://<prod-host>.<tailnet>.ts.net/`,
     temporarily pointed at droppdd instead of the dashboard for the test,
     restored afterward). Full flow confirmed: sign-in creates real
     `User`/`Account`/`Session` rows, the allowlist correctly gates
@@ -138,7 +138,7 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     `systemd --user` service's `Environment=` directive once droppdd gets
     one (same pattern as the skyrise dashboard), not in this repo's `.env`.
     Left unset here on purpose; whoever sets up the real deployment needs
-    to add `AUTH_URL="https://box.tail2b3f17.ts.net"` (or whatever the
+    to add `AUTH_URL="https://<prod-host>.<tailnet>.ts.net"` (or whatever the
     final host is) at that layer.
   - Also fixed during this test: `signIn("google")` had no explicit
     `redirectTo`, so a successful sign-in landed back on `/signin` instead
@@ -146,7 +146,7 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     valid the whole time). Now calls `signIn("google", { redirectTo: "/" })`.
 - **Before deploying**: the OAuth client's authorized redirect URIs
   already include both `http://localhost:3000/api/auth/callback/google`
-  and `https://box.tail2b3f17.ts.net/api/auth/callback/google` (see the
+  and `https://<prod-host>.<tailnet>.ts.net/api/auth/callback/google` (see the
   entry below on the Tailscale hostname fix) — confirm that's still
   current if the deploy target changes.
 
@@ -155,12 +155,12 @@ The `droppdd` app shell is complete, featuring persistent navigation, a dashboar
     from the Bitwarden secure note) and a freshly generated `AUTH_SECRET`.
   - The Google OAuth client's authorized redirect URIs now include both
     `http://localhost:3000/api/auth/callback/google` (dev) and
-    `https://box.tail2b3f17.ts.net/api/auth/callback/google` (prod, over
+    `https://<prod-host>.<tailnet>.ts.net/api/auth/callback/google` (prod, over
     `tailscale serve`, same pattern as the skyrise dashboard). Verified
     saved via a fresh page reload of the Cloud Console client editor.
     - Google notes propagation can take up to a few hours.
     - Caveat: this assumes droppdd ends up served at the *root* of
-    `box.tail2b3f17.ts.net`. If it lands on a sub-path instead, this
+    `<prod-host>.<tailnet>.ts.net`. If it lands on a sub-path instead, this
     redirect URI needs updating first.
     - **Scope, per the prompt**: Auth.js (NextAuth) with the Google provider
     only, Prisma adapter (adds `User`/`Account`/`Session`/`VerificationToken`
@@ -233,7 +233,7 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
     `WantedBy=default.target`. Enabled via `systemctl --user enable --now`;
     confirmed `Linger=yes` was already set (from the dashboard's setup), so
     it survives a reboot without a login session.
-  - `Environment=AUTH_URL=https://box.tail2b3f17.ts.net:8443/api/auth` set
+  - `Environment=AUTH_URL=https://<prod-host>.<tailnet>.ts.net:8443/api/auth` set
     in the unit itself — **not** in the shared dev `.env`, exactly per the
     warning in the auth-phase section above (a hardcoded `AUTH_URL` there
     would break local `localhost:3000` testing).
@@ -242,7 +242,7 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
     default-443 root on 8787. Both coexist; verified with `tailscale serve
     status` showing both mappings simultaneously.
   - The Google OAuth client's authorized redirect URIs already included
-    `https://box.tail2b3f17.ts.net:8443/api/auth/callback/google` (added
+    `https://<prod-host>.<tailnet>.ts.net:8443/api/auth/callback/google` (added
     ahead of time before this pass, specifically so it wouldn't be a
     mid-task blocker).
 - **Verification performed**:
@@ -253,7 +253,7 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
   - `tailscale serve status` → both the dashboard (443→8787) and droppdd
     (8443→3001) mappings present at once; dashboard re-confirmed still
     `200` afterward.
-  - `curl https://box.tail2b3f17.ts.net:8443/api/auth/providers` → returns
+  - `curl https://<prod-host>.<tailnet>.ts.net:8443/api/auth/providers` → returns
     the Google provider with `callbackUrl` matching exactly what's
     registered in Cloud Console.
   - **Real end-to-end Google sign-in verified live** against the deployed
@@ -271,7 +271,7 @@ Confirmed via DOM inspection: the mobile top-header sign-out button is real and 
   rebuild on its own (deliberately — a build step inside `ExecStart` would
   slow every restart/crash-recovery cycle).
 - **Known limitation**: `AUTH_URL` is hardcoded to
-  `box.tail2b3f17.ts.net:8443`. If the deployment ever moves off this host
+  `<prod-host>.<tailnet>.ts.net:8443`. If the deployment ever moves off this host
   or off Tailscale, that env var (and the registered OAuth redirect URI)
   both need updating together.
 
@@ -1810,7 +1810,7 @@ for a liveness probe.
 `npm run build` and `npm run lint` both pass. Verified locally:
 `curl http://localhost:3939/api/health` → `HTTP 200`, body
 `{"status":"ok"}`. Once deployed, monitoring should be repointed at
-`https://droppdd-staging.tail2b3f17.ts.net:8443/api/health` (and prod's
+`https://<staging-host>.<tailnet>.ts.net:8443/api/health` (and prod's
 equivalent) instead of the redirect-workaround.
 
 ## 2026-08-30 — Fix droppdd-staging SSH access, catch it up to main
@@ -1820,7 +1820,7 @@ droppdd-staging's OpenSSH daemon was rejecting my key (never authorized
 there) - unlike droppdd-prod and unbrokerrdd, which use Tailscale SSH's
 own browser-check auth flow instead of a local key. Root cause: Tailscale
 SSH (`--ssh`) was never enabled on the staging LXC (VMID 102 on the
-`pveopti` Proxmox host). Enabled it via `pct exec 102 -- tailscale set
+Proxmox host). Enabled it via `pct exec <staging-vmid> -- tailscale set
 --ssh --accept-risk=lose-ssh` from the Proxmox host, which now matches
 prod's auth model.
 

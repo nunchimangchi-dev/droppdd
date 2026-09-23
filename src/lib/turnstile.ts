@@ -6,7 +6,7 @@
 //   TURNSTILE_HOSTNAMES   - comma-separated allowlist of frontend hostnames
 //                           siteverify may report. Per-environment:
 //                             local   -> localhost
-//                             staging -> droppdd-staging.tail2b3f17.ts.net
+//                             staging -> <staging-host>.<tailnet>.ts.net
 //                             prod    -> droppdd.alwaysgivealwaysget.com
 //   NEXT_PUBLIC_TURNSTILE_SITEKEY - optional override (local uses the
 //                           always-passes test sitekey). Defaults to the
