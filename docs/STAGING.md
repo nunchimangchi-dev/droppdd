@@ -15,16 +15,21 @@ that matters: separate host, separate database, separate service.
   *on the staging host* — created via `prisma migrate deploy` and
   `prisma db seed`, never copied from production. Disposable; safe to wipe
   and reseed at any time.
-- **Auth**: Google OAuth, with the staging callback registered as an
-  additional authorized redirect URI. Allowlist seeded with the owner's address
-  via `ALLOWED_EMAILS` at seed time; the real value lives in the environment,
-  not in this document.
+- **Auth**: Google OAuth. Staging has **its own OAuth client**, separate from
+  production's, with only the staging callback registered on it. Allowlist
+  seeded with the owner's address via `ALLOWED_EMAILS` at seed time; the real
+  value lives in the environment, not in this document.
 
-  > **Known weakness:** staging currently shares production's OAuth client
-  > rather than having its own. That means a compromise of the staging host
-  > reaches a credential production also depends on. Separate clients are the
-  > correct shape; this is recorded as a real gap rather than described as a
-  > design.
+  Until 2026-09-24 staging shared production's client, so a compromise of this
+  disposable host reached a credential production also depended on. Separated
+  and verified end to end: the running app's OAuth redirect now carries the
+  staging client id.
+
+  This document previously claimed the staging callback had been "added as a
+  second authorized redirect URI" on production's client. It never had been.
+  Checking the console found three entries, none of them staging's — which
+  also means staging sign-in could not have worked through the shared client.
+  A doc asserting something the system does not do is worse than no doc.
 - **Service**: `systemd --user` unit at
   `~/.config/systemd/user/droppdd.service` on the staging host, running as
   user `farmer` (linger enabled so it survives without an active login
