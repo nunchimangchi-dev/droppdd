@@ -10,7 +10,7 @@ self.addEventListener("push", (event) => {
   }
   const title = typeof payload.title === "string" && payload.title ? payload.title : "DROPPDD";
   const body = typeof payload.body === "string" ? payload.body : "";
-  const url = typeof payload.url === "string" && payload.url.startsWith("/") ? payload.url : "/checkin";
+  const url = typeof payload.url === "string" && payload.url.startsWith("/") && !payload.url.startsWith("//") ? payload.url : "/checkin";
   event.waitUntil(self.registration.showNotification(title, { body, data: { url } }));
 });
 
