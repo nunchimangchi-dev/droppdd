@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -16,7 +16,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
+  applicationName: "DROPPDD",
+  appleWebApp: { capable: true, title: "DROPPDD", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
   title: "DROPPDD // You already know what to eat. This is for actually doing it.",
   description:
     "An invite-only beta for holding a line on how you eat, whatever the method: keto, OMAD, calorie targets, or both. One daily check-in matched to your method, a streak, and a friendly wager. No food diary. No macro math.",
