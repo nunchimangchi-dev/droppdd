@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { impliedWeeklyRatePercent } from "@/lib/wagers";
 import { findUserByUsername } from "@/lib/username";
+import { notifyWagerChallenge } from "@/lib/push";
 
 // Server-side validation for wager creation - the form's <select> and
 // input constraints only enforce this client-side, which is trivially
@@ -102,6 +103,9 @@ export async function createWager(formData: FormData) {
         status: "PENDING",
       },
     });
+
+    // Fire and forget: a push failure must never fail or delay the wager.
+    void notifyWagerChallenge(targetUser.id);
 
     redirect("/wagers");
   }

@@ -8,5 +8,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|signin|auth-error|legal|why|request-access|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons).*)"],
+  matcher: ["/((?!api|signin|auth-error|legal|why|request-access|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons|sw.js).*)"],
 };

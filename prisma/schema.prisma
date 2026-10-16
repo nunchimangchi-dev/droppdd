@@ -111,6 +111,8 @@ model User {
   inviteRequests   InviteRequest[]
   dailyCheckIns    DailyCheckIn[]
   aiMealGenerations AiMealGeneration[]
+  pushSubscriptions PushSubscription[]
+  notificationPreference NotificationPreference?
 }
 
 // One row per AI meal-generation ATTEMPT that reached the paid Anthropic
@@ -126,6 +128,33 @@ model AiMealGeneration {
 
   @@index([createdAt])
   @@index([userId, createdAt])
+}
+
+// Web push (docs/WEB-PUSH-SPEC.md). One row per browser/device a user opted
+// in on. A subscription is bound to the VAPID public key that created it.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  failureCount  Int       @default(0)
+}
+
+// Opt-in only: both flags default off, and there is no default reminder
+// time (the user picks one, which is the consent moment).
+model NotificationPreference {
+  userId             String   @id
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminderEnabled    Boolean  @default(false)
+  reminderHourUtc    Int? // 0-23, the hour (UTC) the reminder fires; UI converts from local time
+  wagerEnabled       Boolean  @default(false)
+  lastReminderSentOn String? // "YYYY-MM-DD" UTC date, dedupe: at most one reminder per UTC day
+  updatedAt          DateTime @updatedAt
 }
 
 // Phase 1 (docs/FUTURE-WAGERS.md): solo commitment contracts, honor system,

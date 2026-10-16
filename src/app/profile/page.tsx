@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PERSONA_OPTIONS, DEFAULT_PERSONA } from "@/lib/personas";
+import { isPushConfigured } from "@/lib/push";
 import { updateUsername, updateProfileDetails } from "./actions";
+import PushSettings from "./PushSettings";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "missing": "Username is required.",
@@ -20,6 +22,33 @@ const inputClass =
   "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-4 py-3 text-sm text-brand-text placeholder-brand-text-muted/40 uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors";
 const selectClass =
   "w-full bg-brand-bg border border-brand-border focus:border-brand-orange hover:border-brand-border-strong rounded-none px-3 py-3 text-sm text-brand-text uppercase font-bold tracking-wider focus:outline-none focus:ring-0 transition-colors cursor-pointer";
+
+function deviceLabel(ua: string | null): string {
+  if (!ua) return "Unknown device";
+  const os = /iPhone/.test(ua)
+    ? "iPhone"
+    : /iPad/.test(ua)
+      ? "iPad"
+      : /Android/.test(ua)
+        ? "Android"
+        : /Mac OS X/.test(ua)
+          ? "Mac"
+          : /Windows/.test(ua)
+            ? "Windows"
+            : /Linux/.test(ua)
+              ? "Linux"
+              : "Device";
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Firefox\//.test(ua)
+      ? "Firefox"
+      : /Chrome\//.test(ua)
+        ? "Chrome"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : "browser";
+  return `${os} ${browser}`;
+}
 
 export default async function ProfilePage({
   searchParams,
@@ -73,6 +102,19 @@ export default async function ProfilePage({
     rejected: challengesReceived.filter((w) => w.status === "REJECTED").length,
   };
 
+  // Push is hidden entirely unless the VAPID keys are configured.
+  const pushEnabled = isPushConfigured();
+  const [pushDevices, pushPrefs] = pushEnabled
+    ? await Promise.all([
+        prisma.pushSubscription.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: { endpoint: true, userAgent: true, createdAt: true },
+        }),
+        prisma.notificationPreference.findUnique({ where: { userId } }),
+      ])
+    : [[], null];
+
   return (
     <div className="space-y-8 animate-fade-in max-w-xl mx-auto">
       {/* Aggressive Section Header */}
@@ -121,6 +163,20 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
+
+      {pushEnabled && (
+        <PushSettings
+          publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+          devices={pushDevices.map((d) => ({
+            endpoint: d.endpoint,
+            label: deviceLabel(d.userAgent),
+            addedOn: d.createdAt.toISOString().slice(0, 10),
+          }))}
+          reminderEnabled={pushPrefs?.reminderEnabled ?? false}
+          reminderHourUtc={pushPrefs?.reminderHourUtc ?? null}
+          wagerEnabled={pushPrefs?.wagerEnabled ?? false}
+        />
+      )}
 
       {/* Peer Challenge Lifecycle */}
       <div className="panel-aggressive">
