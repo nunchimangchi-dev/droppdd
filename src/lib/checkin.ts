@@ -1,4 +1,4 @@
-import { isSameCalendarDay } from "./streak";
+import { isSameCalendarDay } from "./streak.ts";
 
 // Single source of truth for the 6 strength exercises - used by the
 // check-in form, the streak calculation, and the Attack reference page.
