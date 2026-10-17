@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isSameCalendarDay } from "@/lib/streak";
+import { resolveActiveWagersForUser } from "@/lib/resolve-wagers";
 import { computeCurrentStreak, computeMindfulnessStreak, isRestDayEligible } from "@/lib/checkin";
 
 // Unchecked checkboxes come back as `null` from formData.get(), not
@@ -44,6 +45,11 @@ async function recomputeAndSaveStreak(userId: string) {
       mindfulnessStreak: newMindfulnessStreak,
     },
   });
+
+  // Progress just changed (streak here, weight earlier in the same action),
+  // so settle any wager this user is the measured party for now, while a win
+  // is still inside its deadline.
+  await resolveActiveWagersForUser(userId);
 }
 
 export async function checkIn(formData: FormData) {

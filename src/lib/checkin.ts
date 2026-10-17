@@ -51,13 +51,28 @@ export function isDayMet(c: DayRecord): boolean {
 // scale; correctness over micro-optimization. Shared by every streak this
 // app computes (main + mindfulness) - same consecutive-day walk, different
 // "was this day met" predicate.
+//
+// `asOf` lets a caller ask what the streak was at a past instant (wager
+// deadlines): rows after it are ignored. Rows dated after "now" are ignored
+// the same way, so a stray future-dated row cannot zero the streak.
 function computeStreakFromDays<T extends { checkInDate: Date }>(
   days: T[],
-  isMet: (day: T) => boolean
+  isMet: (day: T) => boolean,
+  asOf: Date = new Date()
 ): number {
-  const sorted = [...days].sort((a, b) => b.checkInDate.getTime() - a.checkInDate.getTime());
+  const sorted = days
+    .filter((c) => c.checkInDate.getTime() <= asOf.getTime())
+    .sort((a, b) => b.checkInDate.getTime() - a.checkInDate.getTime());
+
+  // Today's row exists but is not complete yet (a partial check-in saved
+  // earlier in the day): the day is still in progress, so count back from
+  // yesterday instead of treating it as a break, same as "no row yet".
+  if (sorted.length > 0 && isSameCalendarDay(sorted[0].checkInDate, asOf) && !isMet(sorted[0])) {
+    sorted.shift();
+  }
+
   let streak = 0;
-  let expected = new Date();
+  let expected = new Date(asOf);
 
   for (const c of sorted) {
     if (!isMet(c)) break;
@@ -80,8 +95,8 @@ function computeStreakFromDays<T extends { checkInDate: Date }>(
   return streak;
 }
 
-export function computeCurrentStreak(checkIns: DayRecord[]): number {
-  return computeStreakFromDays(checkIns, isDayMet);
+export function computeCurrentStreak(checkIns: DayRecord[], asOf?: Date): number {
+  return computeStreakFromDays(checkIns, isDayMet, asOf);
 }
 
 // Independent of the main streak - no rest-day interaction. Rest days are

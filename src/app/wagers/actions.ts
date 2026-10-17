@@ -186,7 +186,8 @@ export async function respondToChallenge(formData: FormData) {
 
     await prisma.wager.update({
       where: { id: wagerId },
-      data: { startValue, status: "ACTIVE" },
+      // The baseline is captured now, so the measured window starts now too.
+      data: { startValue, status: "ACTIVE", startDate: new Date() },
     });
     redirect("/wagers");
   }

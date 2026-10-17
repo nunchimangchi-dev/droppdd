@@ -12,27 +12,43 @@ interface ProgressLike {
   currentStreak: number;
 }
 
+// The chosen end date is inclusive: a wager ending on a given date can still
+// be won any time on that UTC calendar day. The deadline is therefore the
+// first instant after that day (the end date arrives as midnight UTC).
+export function wagerDeadline(endDate: Date): Date {
+  return new Date(
+    Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate() + 1)
+  );
+}
+
+function targetHit(wager: WagerLike, progress: ProgressLike | null): boolean {
+  if (!progress) return false;
+  if (wager.metric === "WEIGHT_TARGET") {
+    const isLossGoal = wager.targetValue < wager.startValue;
+    return isLossGoal
+      ? progress.currentWeight <= wager.targetValue
+      : progress.currentWeight >= wager.targetValue;
+  }
+  if (wager.metric === "STREAK_TARGET") return progress.currentStreak >= wager.targetValue;
+  return false;
+}
+
 // Pure, no I/O - caller is responsible for persisting the result.
+//
+// Before the deadline the wager is judged on `progress` (current standing).
+// After it, today's standing no longer counts: a target reached late must not
+// win. The caller passes `atDeadline`, what was true by the deadline (see
+// src/lib/resolve-wagers.ts), and with none the wager is LOST.
 export function evaluateWager(
   wager: WagerLike,
   progress: ProgressLike | null,
-  now: Date
+  now: Date,
+  atDeadline: ProgressLike | null = null
 ): WagerStatus {
-  if (progress) {
-    if (wager.metric === "WEIGHT_TARGET") {
-      const isLossGoal = wager.targetValue < wager.startValue;
-      const hit = isLossGoal
-        ? progress.currentWeight <= wager.targetValue
-        : progress.currentWeight >= wager.targetValue;
-      if (hit) return "WON";
-    } else if (wager.metric === "STREAK_TARGET") {
-      if (progress.currentStreak >= wager.targetValue) return "WON";
-    }
+  if (now.getTime() < wagerDeadline(wager.endDate).getTime()) {
+    return targetHit(wager, progress) ? "WON" : "ACTIVE";
   }
-
-  if (now > wager.endDate) return "LOST";
-
-  return "ACTIVE";
+  return targetHit(wager, atDeadline) ? "WON" : "LOST";
 }
 
 export function formatMetricValue(metric: string, value: number): string {

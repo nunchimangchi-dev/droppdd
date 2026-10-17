@@ -133,12 +133,41 @@ describe("computeCurrentStreak", () => {
     assert.equal(computeCurrentStreak(days), 4);
   });
 
-  test("SUSPECT: today's row exists but is unmet, so a live streak from yesterday reads 0", () => {
-    // If the user saved a partial check-in today, the streak drops to 0
-    // instead of falling back to yesterday like the "no row yet" case does.
+  test("a partial check-in today does not break a live streak from yesterday", () => {
+    // Today is still in progress, so an unmet row for today is skipped and
+    // the count runs back from yesterday, same as the "no row yet" case.
     freezeNow();
     const days = [day("2025-03-10T00:00:00Z", { n: 1 }), day("2025-03-09T00:00:00Z"), day("2025-03-08T00:00:00Z")];
-    assert.equal(computeCurrentStreak(days), 0);
+    assert.equal(computeCurrentStreak(days), 2);
+  });
+
+  test("a partial check-in today does not hide a longer streak behind it", () => {
+    freezeNow();
+    const days = [
+      day("2025-03-10T00:00:00Z", { movement: false }),
+      day("2025-03-09T00:00:00Z"),
+      day("2025-03-08T00:00:00Z"),
+      day("2025-03-07T00:00:00Z"),
+    ];
+    assert.equal(computeCurrentStreak(days), 3);
+  });
+
+  test("an unmet row for yesterday still ends the streak", () => {
+    freezeNow();
+    const days = [day("2025-03-10T00:00:00Z"), day("2025-03-09T00:00:00Z", { n: 1 }), day("2025-03-08T00:00:00Z")];
+    assert.equal(computeCurrentStreak(days), 1);
+  });
+
+  test("asOf evaluates the streak at a past instant and ignores later rows", () => {
+    freezeNow();
+    const days = [
+      day("2025-03-10T00:00:00Z"),
+      day("2025-03-09T00:00:00Z"),
+      day("2025-03-08T00:00:00Z"),
+      day("2025-03-07T00:00:00Z"),
+    ];
+    assert.equal(computeCurrentStreak(days, new Date("2025-03-08T23:59:59.999Z")), 2);
+    assert.equal(computeCurrentStreak(days, new Date("2025-03-06T23:59:59.999Z")), 0);
   });
 
   test("SUSPECT: two rows on the same day cut the streak short", () => {
@@ -149,10 +178,10 @@ describe("computeCurrentStreak", () => {
     assert.equal(computeCurrentStreak(days), 1);
   });
 
-  test("SUSPECT: a future-dated check-in makes the whole streak 0", () => {
+  test("a future-dated check-in is ignored", () => {
     freezeNow();
     const days = [day("2025-03-12T00:00:00Z"), day("2025-03-10T00:00:00Z"), day("2025-03-09T00:00:00Z")];
-    assert.equal(computeCurrentStreak(days), 0);
+    assert.equal(computeCurrentStreak(days), 2);
   });
 });
 

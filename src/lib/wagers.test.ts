@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evaluateWager, formatMetricValue, impliedWeeklyRatePercent } from "./wagers.ts";
+import { evaluateWager, formatMetricValue, impliedWeeklyRatePercent, wagerDeadline } from "./wagers.ts";
 
 const end = new Date("2025-06-30T00:00:00Z");
 const before = new Date("2025-06-29T23:59:59.999Z");
-const after = new Date("2025-06-30T00:00:00.001Z");
+const lastMoment = new Date("2025-06-30T23:59:59.999Z"); // still inside the end date
+const after = new Date("2025-07-01T00:00:00Z"); // first instant past the end date
 
 const loss = { metric: "WEIGHT_TARGET", startValue: 200, targetValue: 180, endDate: end };
 const gain = { metric: "WEIGHT_TARGET", startValue: 150, targetValue: 170, endDate: end };
@@ -34,24 +35,41 @@ test("weight progress does not win a streak wager and vice versa", () => {
   assert.equal(evaluateWager(loss, p(300, 999), before), "ACTIVE"); // streak ignored
 });
 
-test("end date boundary: exactly at endDate is still ACTIVE, one ms later is LOST", () => {
+test("wagerDeadline: the end date is inclusive, the deadline is the next UTC midnight", () => {
+  assert.equal(wagerDeadline(end).toISOString(), "2025-07-01T00:00:00.000Z");
+  assert.equal(wagerDeadline(new Date("2025-12-31T00:00:00Z")).toISOString(), "2026-01-01T00:00:00.000Z");
+  assert.equal(wagerDeadline(new Date("2025-06-30T13:45:00Z")).toISOString(), "2025-07-01T00:00:00.000Z");
+});
+
+test("end date boundary: ACTIVE through the last moment of the end date, LOST from the next UTC midnight", () => {
   assert.equal(evaluateWager(loss, p(190), end), "ACTIVE");
+  assert.equal(evaluateWager(loss, p(190), lastMoment), "ACTIVE");
   assert.equal(evaluateWager(loss, p(190), after), "LOST");
 });
 
-test("hitting the target exactly at the end date wins", () => {
+test("hitting the target at any point on the end date wins", () => {
   assert.equal(evaluateWager(loss, p(180), end), "WON");
+  assert.equal(evaluateWager(loss, p(180), lastMoment), "WON");
 });
 
-test("SUSPECT: a target hit after the deadline still wins", () => {
-  // The win check runs before the deadline check, so a late evaluation
-  // (e.g. a cron that runs days after endDate) flips LOST-worthy wagers to WON.
-  assert.equal(evaluateWager(loss, p(179), after), "WON");
+test("a target reached after the deadline does not win", () => {
+  // Today's standing is ignored once the deadline has passed, so a late
+  // evaluation cannot flip a missed wager to WON.
+  assert.equal(evaluateWager(loss, p(179), after), "LOST");
+  assert.equal(evaluateWager(streak, p(0, 99), after), "LOST");
 });
 
-test("null progress: ACTIVE until the end date passes, then LOST", () => {
+test("after the deadline the result is judged on what was true at the deadline", () => {
+  assert.equal(evaluateWager(loss, p(190), after, p(179)), "WON");
+  assert.equal(evaluateWager(loss, p(179), after, p(185)), "LOST");
+  assert.equal(evaluateWager(streak, null, after, p(0, 30)), "WON");
+  assert.equal(evaluateWager(streak, null, after, p(0, 29)), "LOST");
+  assert.equal(evaluateWager(loss, p(179), after, null), "LOST");
+});
+
+test("null progress: ACTIVE until the deadline passes, then LOST", () => {
   assert.equal(evaluateWager(loss, null, before), "ACTIVE");
-  assert.equal(evaluateWager(loss, null, end), "ACTIVE");
+  assert.equal(evaluateWager(loss, null, lastMoment), "ACTIVE");
   assert.equal(evaluateWager(loss, null, after), "LOST");
 });
 

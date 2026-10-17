@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { evaluateWager, formatMetricValue } from "@/lib/wagers";
+import { formatMetricValue } from "@/lib/wagers";
+import { resolveActiveWagersForUser } from "@/lib/resolve-wagers";
 import { createWager, submitInviteRequest } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -54,36 +55,11 @@ export default async function WagersPage({
 
   const progress = await prisma.progress.findFirst({ where: { userId } });
 
-  // Only resolve wagers against MY OWN progress: solo wagers I created, and
-  // peer challenges where I'm the one being measured (challengedUserId ===
-  // me). A wager I created for someone ELSE (challengedUserId set, userId
-  // === me) must NOT be resolved here - it resolves against their progress
-  // when they load this page, not mine.
-  const activeWagers = await prisma.wager.findMany({
-    where: {
-      status: "ACTIVE",
-      OR: [
-        { userId, challengedUserId: null },
-        { challengedUserId: userId },
-      ],
-    },
-  });
-
+  // Resolves only wagers where I am the measured party (see
+  // resolveActiveWagersForUser). The same function also runs whenever my
+  // progress changes, so this is the backstop, not the only trigger.
   const now = new Date();
-  await Promise.all(
-    activeWagers.map(async (wager) => {
-      // ACTIVE always implies startValue is set (solo: at creation, peer:
-      // at accept-time) - only PENDING peer challenges have a null one.
-      if (wager.startValue === null) return;
-      const resolved = evaluateWager({ ...wager, startValue: wager.startValue }, progress, now);
-      if (resolved !== "ACTIVE") {
-        await prisma.wager.update({
-          where: { id: wager.id },
-          data: { status: resolved, resolvedAt: now },
-        });
-      }
-    })
-  );
+  await resolveActiveWagersForUser(userId, now);
 
   const soloWagers = await prisma.wager.findMany({
     where: { userId, challengedUserId: null },
